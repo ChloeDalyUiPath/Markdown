@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:hungry-cheer-28181014.figma.site)",
+      "Bash(tr '}' '\\\\n')",
+      "Bash(npm install)",
+      "mcp__Claude_Preview__preview_start",
+      "WebFetch(domain:www.figma.com)",
+      "WebFetch(domain:www.builder.io)",
+      "Bash(pgrep -x \"Figma\")",
+      "Bash(open -a \"Google Chrome\" \"http://localhost:5173\")",
+      "Bash(open -a \"Safari\" \"http://localhost:5173\")",
+      "Bash(screencapture -x /tmp/markdown-overview.png)",
+      "Bash(osascript:*)",
+      "Bash(python3:*)",
+      "WebSearch",
+      "WebFetch(domain:developers.figma.com)",
+      "WebFetch(domain:help.figma.com)",
+      "Read(//usr/local/bin/**)",
+      "Read(//Users/chloe.daly/Design engineering/Markdown-app/$HOME/.claude/local/**)",
+      "Read(//Applications/Claude.app/Contents/MacOS/**)",
+      "mcp__local-server__get_design_context",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm create vite@latest rebuy-tool -- --template react)",
+      "Bash(npm install lucide-react clsx)",
+      "Bash(npm install -D tailwindcss@3 postcss autoprefixer)",
+      "Bash(npx tailwindcss init -p)",
+      "Bash(kill 35825)",
+      "Bash(npm install vite@5.4.8 @vitejs/plugin-react@4.3.1 --save-dev)",
+      "Bash(curl -s http://localhost:5174)",
+      "Bash(open \"http://localhost:5174\")",
+      "Bash(screencapture -x /tmp/rebuy-screenshot.png)",
+      "mcp__Control_Chrome__open_url",
+      "Bash(screencapture -x /tmp/rebuy-app.png)"
+    ]
+  }
+}
