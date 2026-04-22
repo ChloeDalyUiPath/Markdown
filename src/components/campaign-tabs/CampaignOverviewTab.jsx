@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import {
   Info,
-  TrendingDown,
-  TrendingUp,
   ChevronRight,
   CheckCircle2,
   CalendarDays,
@@ -11,6 +9,7 @@ import {
   AlertTriangle,
   ArrowUpRight,
 } from 'lucide-react'
+import StatCard from '../StatCard'
 import {
   AreaChart,
   Area,
@@ -23,10 +22,10 @@ import {
 } from 'recharts'
 
 const kpiCards = [
-  { label: 'Avg Margin', value: '30.3%', change: '-2% vs target', negative: true },
-  { label: 'Avg Sell-Through', value: '65%', change: '-10% vs target', negative: true },
-  { label: 'Avg Cover', value: '4 weeks', change: '-2% vs target', negative: true },
-  { label: 'Total Revenue', value: '€4.4M', change: '-3% vs target', negative: true },
+  { label: 'Avg Margin',       value: '30.3%',  change: '-2% vs target',  negative: true, color: 'amber' },
+  { label: 'Avg Sell-Through', value: '65%',    change: '-10% vs target', negative: true, color: 'green' },
+  { label: 'Avg Cover',        value: '4 weeks',change: '-2% vs target',  negative: true, color: 'amber' },
+  { label: 'Total Revenue',    value: '€4.4M',  change: '-3% vs target',  negative: true, color: 'blue'  },
 ]
 
 const sellThroughData = [
@@ -122,17 +121,7 @@ export default function CampaignOverviewTab({ status, onNavigateToProducts }) {
       {/* KPI cards row */}
       <div className="grid gap-3 mb-5" style={{ gridTemplateColumns: 'repeat(4, 1fr) 1.1fr' }}>
         {kpiCards.map((k) => (
-          <div key={k.label} className="bg-white rounded-xl border border-l-4 border-gray-200 border-l-violet-400 p-4">
-            <div className="flex items-center gap-1 mb-1">
-              <span className="text-xs font-medium text-gray-500">{k.label}</span>
-              <Info size={11} className="text-gray-400" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900 leading-tight mb-1">{k.value}</div>
-            <div className={`flex items-center gap-1 text-xs font-medium ${k.negative ? 'text-red-500' : 'text-green-600'}`}>
-              {k.negative ? <TrendingDown size={11} /> : <TrendingUp size={11} />}
-              <span>{k.change}</span>
-            </div>
-          </div>
+          <StatCard key={k.label} label={k.label} value={k.value} change={k.change} negative={k.negative} color={k.color} />
         ))}
 
         {/* Underperforming Categories — clickable on live campaigns */}
