@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Search,
   SlidersHorizontal,
@@ -13,7 +14,9 @@ import {
   Globe,
   MoreVertical,
   Info,
+  Plus,
 } from 'lucide-react'
+import CreateCampaignModal from './CreateCampaignModal'
 
 const campaigns = [
   {
@@ -146,8 +149,12 @@ function StatusBadge({ status }) {
 }
 
 export default function CampaignsTab({ onSelectCampaign }) {
+  const [showCreate, setShowCreate] = useState(false)
+
   return (
     <div>
+      {showCreate && <CreateCampaignModal onClose={() => setShowCreate(false)} />}
+
       {/* Header */}
       <div className="flex items-start justify-between mb-5">
         <div>
@@ -156,10 +163,19 @@ export default function CampaignsTab({ onSelectCampaign }) {
             Search and edit campaigns or create a new one.
           </p>
         </div>
-        <button className="flex items-center gap-2 border border-gray-200 rounded-lg px-3.5 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-          <SlidersHorizontal size={15} />
-          Filter
-        </button>
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-2 border border-gray-200 rounded-lg px-3.5 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            <SlidersHorizontal size={15} />
+            Filter
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-[#2a44d4] text-white rounded-lg px-3.5 py-2 text-sm font-medium hover:bg-[#2338b8] transition-colors"
+          >
+            <Plus size={15} />
+            Create Campaign
+          </button>
+        </div>
       </div>
 
       {/* Two stat cards */}
