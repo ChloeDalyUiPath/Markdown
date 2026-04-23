@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
-  Search, SlidersHorizontal, Columns, ChevronDown, ChevronUp,
+  Search, SlidersHorizontal, Columns2, ChevronDown, ChevronUp,
   TrendingUp, TrendingDown, ChevronLeft, ChevronRight,
   ChevronsLeft, ChevronsRight, Edit2, Settings, ShieldAlert,
-  AlertTriangle, CheckCircle2, LayoutGrid,
+  AlertTriangle, CheckCircle2, LayoutGrid, Check,
 } from 'lucide-react'
 
 // ─── Mock data ──────────────────────────────────────────────────────────────
@@ -83,6 +83,33 @@ const products = Array.from({ length: 8 }, (_, i) => ({
   predRevenue: ['£10.2K', '£8.1K', '£14.6K', '£5.8K', '£9.4K', '£6.3K', '£12.1K', '£4.2K'][i], predRevenueChange: '+2.4%',
 }))
 
+// ─── Column definitions ───────────────────────────────────────────────────────
+
+const CAT_COLS = [
+  { key: 'products',   label: 'Products / Optimised' },
+  { key: 'markdown',   label: 'Avg Markdown' },
+  { key: 'sellThru',   label: 'Sell-Through' },
+  { key: 'revenue',    label: 'Revenue' },
+  { key: 'margin',     label: 'Avg Margin' },
+  { key: 'stock',      label: 'Stock Cover' },
+  { key: 'guardrails', label: 'Guardrails' },
+]
+
+const PROD_COLS = [
+  { key: 'category',    label: 'Category' },
+  { key: 'season',      label: 'Season' },
+  { key: 'status',      label: 'Status' },
+  { key: 'country',     label: 'Country' },
+  { key: 'sales',       label: 'Sales' },
+  { key: 'revenue',     label: 'Revenue' },
+  { key: 'margin',      label: 'Margin %' },
+  { key: 'stock',       label: 'Stock' },
+  { key: 'predStock',   label: 'Pred. Stock' },
+  { key: 'predDemand',  label: 'Pred. Demand' },
+  { key: 'predMargin',  label: 'Pred. Margin' },
+  { key: 'predRevenue', label: 'Pred. Revenue' },
+]
+
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 function Delta({ value }) {
@@ -135,11 +162,41 @@ export default function CampaignProductsTab({ status, initialFilter }) {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [filterPerf, setFilterPerf] = useState(initialFilter || null)
+
+  const [visibleCatCols, setVisibleCatCols] = useState(new Set(CAT_COLS.map(c => c.key)))
+  const [visibleProdCols, setVisibleProdCols] = useState(new Set(PROD_COLS.map(c => c.key)))
+  const [showColPanel, setShowColPanel] = useState(false)
+  const colPanelRef = useRef(null)
+
   const totalPages = 25
 
   useEffect(() => {
     if (initialFilter) setFilterPerf(initialFilter)
   }, [initialFilter])
+
+  useEffect(() => {
+    if (!showColPanel) return
+    function handler(e) {
+      if (colPanelRef.current && !colPanelRef.current.contains(e.target)) setShowColPanel(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showColPanel])
+
+  const currentCols = view === 'Category Level' ? CAT_COLS : PROD_COLS
+  const currentVisible = view === 'Category Level' ? visibleCatCols : visibleProdCols
+  const setCurrentVisible = view === 'Category Level' ? setVisibleCatCols : setVisibleProdCols
+
+  function toggleCol(key) {
+    setCurrentVisible(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const col = key => currentVisible.has(key)
 
   const filteredCategories = categoryData.filter(c => {
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
@@ -170,7 +227,7 @@ export default function CampaignProductsTab({ status, initialFilter }) {
             {['Product Level', 'Category Level'].map(v => (
               <button
                 key={v}
-                onClick={() => setView(v)}
+                onClick={() => { setView(v); setShowColPanel(false) }}
                 className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg border transition-colors
                   ${view === v ? 'border-[#2a44d4] text-[#2a44d4] bg-white' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
               >
@@ -193,6 +250,45 @@ export default function CampaignProductsTab({ status, initialFilter }) {
         <button className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
           <SlidersHorizontal size={14} /> Filter
         </button>
+
+        {/* Columns button */}
+        <div className="relative" ref={colPanelRef}>
+          <button
+            onClick={() => setShowColPanel(v => !v)}
+            className={`flex items-center gap-1.5 border rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              showColPanel ? 'border-[#2a44d4] text-[#2a44d4] bg-indigo-50' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <Columns2 size={14} /> Columns
+          </button>
+          {showColPanel && (
+            <div className="absolute top-full left-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-20 w-52 overflow-hidden">
+              <div className="px-3 py-2.5 border-b border-gray-100">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  {view === 'Category Level' ? 'Category columns' : 'Product columns'}
+                </span>
+              </div>
+              {currentCols.map(c => (
+                <button key={c.key} onClick={() => toggleCol(c.key)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                  {c.label}
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${currentVisible.has(c.key) ? 'bg-[#2a44d4] border-[#2a44d4]' : 'border-gray-300'}`}>
+                    {currentVisible.has(c.key) && <Check size={9} className="text-white" />}
+                  </div>
+                </button>
+              ))}
+              <div className="px-3 py-2 border-t border-gray-100">
+                <button
+                  onClick={() => setCurrentVisible(new Set(currentCols.map(c => c.key)))}
+                  className="text-xs text-[#2a44d4] hover:underline"
+                >
+                  Reset to default
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
         {filterPerf === 'underperforming' && (
           <span className="flex items-center gap-1.5 bg-red-50 border border-red-200 text-red-600 text-xs font-medium px-3 py-1.5 rounded-full">
             <AlertTriangle size={11} /> Underperforming only
@@ -221,22 +317,32 @@ export default function CampaignProductsTab({ status, initialFilter }) {
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 min-w-[160px]">Category</th>
-                  <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">
-                    Products<br /><span className="font-normal text-gray-400">Optimised</span>
-                  </th>
-                  <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Avg Markdown</th>
-                  <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">
-                    Sell-Through<br /><span className="font-normal text-gray-400">vs Target</span>
-                  </th>
-                  <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">
-                    Revenue<br /><span className="font-normal text-gray-400">vs Target</span>
-                  </th>
-                  <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Avg Margin</th>
-                  <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Stock Cover<br /><span className="font-normal text-gray-400">weeks</span></th>
+                  {col('products') && (
+                    <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">
+                      Products<br /><span className="font-normal text-gray-400">Optimised</span>
+                    </th>
+                  )}
+                  {col('markdown') && <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Avg Markdown</th>}
+                  {col('sellThru') && (
+                    <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">
+                      Sell-Through<br /><span className="font-normal text-gray-400">vs Target</span>
+                    </th>
+                  )}
+                  {col('revenue') && (
+                    <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">
+                      Revenue<br /><span className="font-normal text-gray-400">vs Target</span>
+                    </th>
+                  )}
+                  {col('margin') && <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Avg Margin</th>}
+                  {col('stock') && (
+                    <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">
+                      Stock Cover<br /><span className="font-normal text-gray-400">weeks</span>
+                    </th>
+                  )}
                   {isLive && (
                     <th className="text-center px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Performance</th>
                   )}
-                  <th className="text-center px-3 py-3 text-xs font-semibold text-gray-500">Guardrails</th>
+                  {col('guardrails') && <th className="text-center px-3 py-3 text-xs font-semibold text-gray-500">Guardrails</th>}
                 </tr>
               </thead>
               <tbody>
@@ -246,39 +352,41 @@ export default function CampaignProductsTab({ status, initialFilter }) {
                       <div className="font-semibold text-gray-900 text-sm">{cat.name}</div>
                       <div className="text-xs text-gray-400">{cat.products.toLocaleString()} products</div>
                     </td>
-                    <td className="px-3 py-3 text-right">
-                      <div className="text-sm font-semibold text-gray-900">{cat.products.toLocaleString()}</div>
-                      <div className="text-xs text-gray-400">{cat.optimised.toLocaleString()} optimised</div>
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      <span className="text-sm font-semibold text-gray-900">{cat.avgMarkdown}</span>
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      <div className="text-sm font-semibold text-gray-900">{cat.sellThrough}</div>
-                      <Delta value={cat.vstTarget} />
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      <div className="text-sm font-semibold text-gray-900">{cat.revenue}</div>
-                      <Delta value={cat.revenueVsTarget} />
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      <span className="text-sm font-semibold text-gray-900">{cat.avgMargin}</span>
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      <span className={`text-sm font-semibold ${cat.stockCover > 4 ? 'text-red-600' : cat.stockCover > 3 ? 'text-amber-600' : 'text-gray-900'}`}>
-                        {cat.stockCover}
-                      </span>
-                    </td>
-                    {isLive && (
-                      <td className="px-3 py-3 text-center">
-                        <PerformanceBadge perf={cat.performance} />
+                    {col('products') && (
+                      <td className="px-3 py-3 text-right">
+                        <div className="text-sm font-semibold text-gray-900">{cat.products.toLocaleString()}</div>
+                        <div className="text-xs text-gray-400">{cat.optimised.toLocaleString()} optimised</div>
                       </td>
                     )}
-                    <td className="px-3 py-3 text-center">
-                      {cat.guardrails
-                        ? <GuardrailBadge note={cat.guardrailNote} />
-                        : <span className="text-xs text-gray-300">—</span>}
-                    </td>
+                    {col('markdown') && <td className="px-3 py-3 text-right"><span className="text-sm font-semibold text-gray-900">{cat.avgMarkdown}</span></td>}
+                    {col('sellThru') && (
+                      <td className="px-3 py-3 text-right">
+                        <div className="text-sm font-semibold text-gray-900">{cat.sellThrough}</div>
+                        <Delta value={cat.vstTarget} />
+                      </td>
+                    )}
+                    {col('revenue') && (
+                      <td className="px-3 py-3 text-right">
+                        <div className="text-sm font-semibold text-gray-900">{cat.revenue}</div>
+                        <Delta value={cat.revenueVsTarget} />
+                      </td>
+                    )}
+                    {col('margin') && <td className="px-3 py-3 text-right"><span className="text-sm font-semibold text-gray-900">{cat.avgMargin}</span></td>}
+                    {col('stock') && (
+                      <td className="px-3 py-3 text-right">
+                        <span className={`text-sm font-semibold ${cat.stockCover > 4 ? 'text-red-600' : cat.stockCover > 3 ? 'text-amber-600' : 'text-gray-900'}`}>
+                          {cat.stockCover}
+                        </span>
+                      </td>
+                    )}
+                    {isLive && (
+                      <td className="px-3 py-3 text-center"><PerformanceBadge perf={cat.performance} /></td>
+                    )}
+                    {col('guardrails') && (
+                      <td className="px-3 py-3 text-center">
+                        {cat.guardrails ? <GuardrailBadge note={cat.guardrailNote} /> : <span className="text-xs text-gray-300">—</span>}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -301,43 +409,43 @@ export default function CampaignProductsTab({ status, initialFilter }) {
                     <div className="text-xs font-semibold text-gray-700">Product Name</div>
                     <div className="text-xs font-normal text-gray-400">Product ID</div>
                   </th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Category</th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Season</th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Status</th>
+                  {col('category') && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Category</th>}
+                  {col('season') && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Season</th>}
+                  {col('status') && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Status</th>}
                   <th className="px-2 py-3" />
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Country</th>
-                  <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Sales</div><div className="text-xs font-normal text-gray-400">vs LY</div></th>
-                  <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Revenue</div><div className="text-xs font-normal text-gray-400">vs LY</div></th>
-                  <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Margin %</div><div className="text-xs font-normal text-gray-400">vs LY</div></th>
-                  <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Stock</div><div className="text-xs font-normal text-gray-400">wks cover</div></th>
-                  <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Pred. Stock</div><div className="text-xs font-normal text-gray-400">wks</div></th>
-                  <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Pred. Demand</div><div className="text-xs font-normal text-gray-400">vs Base</div></th>
-                  <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Pred. Margin</div><div className="text-xs font-normal text-gray-400">vs Base</div></th>
-                  <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Pred. Revenue</div><div className="text-xs font-normal text-gray-400">vs Base</div></th>
+                  {col('country') && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Country</th>}
+                  {col('sales') && <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Sales</div><div className="text-xs font-normal text-gray-400">vs LY</div></th>}
+                  {col('revenue') && <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Revenue</div><div className="text-xs font-normal text-gray-400">vs LY</div></th>}
+                  {col('margin') && <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Margin %</div><div className="text-xs font-normal text-gray-400">vs LY</div></th>}
+                  {col('stock') && <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Stock</div><div className="text-xs font-normal text-gray-400">wks cover</div></th>}
+                  {col('predStock') && <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Pred. Stock</div><div className="text-xs font-normal text-gray-400">wks</div></th>}
+                  {col('predDemand') && <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Pred. Demand</div><div className="text-xs font-normal text-gray-400">vs Base</div></th>}
+                  {col('predMargin') && <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Pred. Margin</div><div className="text-xs font-normal text-gray-400">vs Base</div></th>}
+                  {col('predRevenue') && <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Pred. Revenue</div><div className="text-xs font-normal text-gray-400">vs Base</div></th>}
                 </tr>
               </thead>
               <tbody>
                 {products.map((p, i) => (
                   <tr key={p.id} className={`${i < products.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50`}>
                     <td className="px-4 py-3"><div className="font-semibold text-gray-900">{p.name}</div><div className="text-xs text-gray-400">{p.productId}</div></td>
-                    <td className="px-3 py-3 text-xs text-gray-600">{p.category}</td>
-                    <td className="px-3 py-3 text-xs text-gray-600">{p.season}</td>
-                    <td className="px-3 py-3"><ProductStatusBadge status={p.status} /></td>
+                    {col('category') && <td className="px-3 py-3 text-xs text-gray-600">{p.category}</td>}
+                    {col('season') && <td className="px-3 py-3 text-xs text-gray-600">{p.season}</td>}
+                    {col('status') && <td className="px-3 py-3"><ProductStatusBadge status={p.status} /></td>}
                     <td className="px-2 py-3">
                       <div className="flex gap-1">
                         <button className="w-6 h-6 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50 text-gray-400"><Edit2 size={10} /></button>
                         <button className="w-6 h-6 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50 text-gray-400"><Settings size={10} /></button>
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-xs text-gray-600">{p.country}</td>
-                    <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.sales}</div><Delta value={p.salesChange} /></td>
-                    <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.revenue}</div><Delta value={p.revenueChange} /></td>
-                    <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.margin}</div><Delta value={p.marginChange} /></td>
-                    <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.stock}</div><Delta value={p.stockChange} /></td>
-                    <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.predStock}</div><Delta value={p.predStockChange} /></td>
-                    <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.predDemand}</div><Delta value={p.predDemandChange} /></td>
-                    <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.predMargin}</div><Delta value={p.predMarginChange} /></td>
-                    <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.predRevenue}</div><Delta value={p.predRevenueChange} /></td>
+                    {col('country') && <td className="px-3 py-3 text-xs text-gray-600">{p.country}</td>}
+                    {col('sales') && <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.sales}</div><Delta value={p.salesChange} /></td>}
+                    {col('revenue') && <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.revenue}</div><Delta value={p.revenueChange} /></td>}
+                    {col('margin') && <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.margin}</div><Delta value={p.marginChange} /></td>}
+                    {col('stock') && <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.stock}</div><Delta value={p.stockChange} /></td>}
+                    {col('predStock') && <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.predStock}</div><Delta value={p.predStockChange} /></td>}
+                    {col('predDemand') && <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.predDemand}</div><Delta value={p.predDemandChange} /></td>}
+                    {col('predMargin') && <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.predMargin}</div><Delta value={p.predMarginChange} /></td>}
+                    {col('predRevenue') && <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.predRevenue}</div><Delta value={p.predRevenueChange} /></td>}
                   </tr>
                 ))}
               </tbody>

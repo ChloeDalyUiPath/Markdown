@@ -34,7 +34,7 @@ const MESSAGING_OPTS = ['Up to 20% off', 'Up to 30% off', 'Up to 40% off', 'Up t
 const STEP_CONFIG = {
   1: { title: 'Create a Campaign',     subtitle: 'Provide details of your campaign.' },
   2: { title: 'Select Categories',     subtitle: 'Choose the categories to include.' },
-  3: { title: 'Configure Guardrails',  subtitle: 'Set optional constraints for this campaign.' },
+  3: { title: 'Configure Guardrails',  subtitle: 'Optional — set constraints for this campaign.' },
   4: { title: 'Review & Create Draft', subtitle: 'Check everything before saving.' },
 }
 
@@ -83,7 +83,9 @@ function Stepper({ value, onChange }) {
   const n = parseInt(value) || 0
   return (
     <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-      <span className="flex-1 px-3 py-2.5 text-sm text-gray-700">{value}%</span>
+      <span className="flex-1 px-3 py-2.5 text-sm text-gray-700">
+        {value !== '' ? `${value}%` : <span className="text-gray-400">—</span>}
+      </span>
       <div className="flex flex-col border-l border-gray-200">
         <button onClick={() => onChange(String(Math.min(100, n + 5)))} className="px-2.5 py-1 hover:bg-gray-50 text-gray-400 border-b border-gray-200">
           <ChevronUp size={10} />
@@ -520,11 +522,11 @@ export default function CreateCampaignModal({ onClose, onCreated }) {
     optionalSettings: { suggestedOnly: false, advancedRollUp: false, rollingMarkdown: false },
     selectedCategories: [],
     guardrails: {
-      minMarkdown: '10',
-      maxMarkdown: '40',
+      minMarkdown: '',
+      maxMarkdown: '',
       minGrossMargin: '',
       messagingDiscount: '',
-      minPctDiscountMessaging: '40',
+      minPctDiscountMessaging: '',
       requiresApproval: false,
     },
   })
@@ -538,7 +540,7 @@ export default function CreateCampaignModal({ onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[600px] flex flex-col overflow-hidden">
 
         {/* Header */}
         <div className="px-6 pt-5 pb-4 border-b border-gray-100">
@@ -574,11 +576,19 @@ export default function CreateCampaignModal({ onClose, onCreated }) {
             className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors">
             Cancel
           </button>
-          <button
-            onClick={step === 4 ? handleSubmit : () => setStep(s => s + 1)}
-            className="flex items-center gap-2 bg-[#2a44d4] hover:bg-[#2438b8] text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
-            {step === 4 ? 'Create Draft' : <> Next <ChevronRight size={15} /></>}
-          </button>
+          <div className="flex items-center gap-3">
+            {step === 3 && (
+              <button onClick={() => setStep(4)}
+                className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors">
+                Skip
+              </button>
+            )}
+            <button
+              onClick={step === 4 ? handleSubmit : () => setStep(s => s + 1)}
+              className="flex items-center gap-2 bg-[#2a44d4] hover:bg-[#2438b8] text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
+              {step === 4 ? 'Create Draft' : <> Next <ChevronRight size={15} /></>}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   Search,
   SlidersHorizontal,
@@ -14,9 +14,9 @@ import {
   Globe,
   MoreVertical,
   Info,
-  Plus,
+  Columns2,
+  Check,
 } from 'lucide-react'
-import CreateCampaignModal from './CreateCampaignModal'
 
 const campaigns = [
   {
@@ -148,13 +148,43 @@ function StatusBadge({ status }) {
   )
 }
 
+const COLS = [
+  { key: 'type',       label: 'Type' },
+  { key: 'country',    label: 'Country' },
+  { key: 'dates',      label: 'Dates' },
+  { key: 'products',   label: 'Products' },
+  { key: 'categories', label: 'Categories' },
+  { key: 'tags',       label: 'Tags' },
+  { key: 'status',     label: 'Status' },
+]
+
 export default function CampaignsTab({ onSelectCampaign }) {
-  const [showCreate, setShowCreate] = useState(false)
+  const [visibleCols, setVisibleCols] = useState(new Set(COLS.map(c => c.key)))
+  const [showColPanel, setShowColPanel] = useState(false)
+  const colPanelRef = useRef(null)
+
+  useEffect(() => {
+    if (!showColPanel) return
+    function handler(e) {
+      if (colPanelRef.current && !colPanelRef.current.contains(e.target)) setShowColPanel(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showColPanel])
+
+  function toggleCol(key) {
+    setVisibleCols(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const col = key => visibleCols.has(key)
 
   return (
     <div>
-      {showCreate && <CreateCampaignModal onClose={() => setShowCreate(false)} />}
-
       {/* Header */}
       <div className="flex items-start justify-between mb-5">
         <div>
@@ -163,18 +193,44 @@ export default function CampaignsTab({ onSelectCampaign }) {
             Search and edit campaigns or create a new one.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative" ref={colPanelRef}>
           <button className="flex items-center gap-2 border border-gray-200 rounded-lg px-3.5 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
             <SlidersHorizontal size={15} />
             Filter
           </button>
           <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 bg-[#2a44d4] text-white rounded-lg px-3.5 py-2 text-sm font-medium hover:bg-[#2338b8] transition-colors"
+            onClick={() => setShowColPanel(v => !v)}
+            className={`flex items-center gap-2 border rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
+              showColPanel ? 'border-[#2a44d4] text-[#2a44d4] bg-indigo-50' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
           >
-            <Plus size={15} />
-            Create Campaign
+            <Columns2 size={15} />
+            Columns
           </button>
+          {showColPanel && (
+            <div className="absolute top-full right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-20 w-48 overflow-hidden">
+              <div className="px-3 py-2.5 border-b border-gray-100">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Toggle columns</span>
+              </div>
+              {COLS.map(c => (
+                <button key={c.key} onClick={() => toggleCol(c.key)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                  {c.label}
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${visibleCols.has(c.key) ? 'bg-[#2a44d4] border-[#2a44d4]' : 'border-gray-300'}`}>
+                    {visibleCols.has(c.key) && <Check size={9} className="text-white" />}
+                  </div>
+                </button>
+              ))}
+              <div className="px-3 py-2 border-t border-gray-100">
+                <button
+                  onClick={() => setVisibleCols(new Set(COLS.map(c => c.key)))}
+                  className="text-xs text-[#2a44d4] hover:underline"
+                >
+                  Reset to default
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -243,20 +299,24 @@ export default function CampaignsTab({ onSelectCampaign }) {
           <thead>
             <tr className="border-b border-gray-100">
               <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Campaign Name</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Type</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Country</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
-                <span className="inline-flex items-center gap-1">
-                  Dates <ChevronDown size={12} className="text-gray-400" />
-                </span>
-              </th>
-              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">
-                <div>Products</div>
-                <div className="font-normal text-gray-400">Optimized</div>
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Categories</th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500">Tags</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500"></th>
+              {col('type') && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Type</th>}
+              {col('country') && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Country</th>}
+              {col('dates') && (
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
+                  <span className="inline-flex items-center gap-1">
+                    Dates <ChevronDown size={12} className="text-gray-400" />
+                  </span>
+                </th>
+              )}
+              {col('products') && (
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">
+                  <div>Products</div>
+                  <div className="font-normal text-gray-400">Optimized</div>
+                </th>
+              )}
+              {col('categories') && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Categories</th>}
+              {col('tags') && <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500">Tags</th>}
+              {col('status') && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500"></th>}
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -270,36 +330,46 @@ export default function CampaignsTab({ onSelectCampaign }) {
                 <td className="px-5 py-4 font-semibold text-gray-900 whitespace-nowrap">
                   {c.name}
                 </td>
-                <td className="px-4 py-4">
-                  <TypeBadge type={c.type} />
-                </td>
-                <td className="px-4 py-4 text-gray-600">{c.country}</td>
-                <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{c.dates}</td>
-                <td className="px-4 py-4 text-right">
-                  <div className="font-semibold text-gray-900">{c.products}</div>
-                  <div className="flex items-center justify-end gap-1 text-xs text-gray-400 mt-0.5">
-                    {c.optimized}
-                    <Info size={11} />
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {c.categories.map((cat) => (
-                      <span key={cat} className="text-xs text-gray-600">{cat}</span>
-                    ))}
-                    <span className="text-xs text-[#2a44d4] font-medium">+{c.extra}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-4 text-center">
-                  {c.tagIcon === 'grid' ? (
-                    <LayoutGrid size={16} className="text-gray-400 mx-auto" />
-                  ) : (
-                    <Globe size={16} className="text-gray-400 mx-auto" />
-                  )}
-                </td>
-                <td className="px-4 py-4">
-                  <StatusBadge status={c.status} />
-                </td>
+                {col('type') && (
+                  <td className="px-4 py-4">
+                    <TypeBadge type={c.type} />
+                  </td>
+                )}
+                {col('country') && <td className="px-4 py-4 text-gray-600">{c.country}</td>}
+                {col('dates') && <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{c.dates}</td>}
+                {col('products') && (
+                  <td className="px-4 py-4 text-right">
+                    <div className="font-semibold text-gray-900">{c.products}</div>
+                    <div className="flex items-center justify-end gap-1 text-xs text-gray-400 mt-0.5">
+                      {c.optimized}
+                      <Info size={11} />
+                    </div>
+                  </td>
+                )}
+                {col('categories') && (
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {c.categories.map((cat) => (
+                        <span key={cat} className="text-xs text-gray-600">{cat}</span>
+                      ))}
+                      <span className="text-xs text-[#2a44d4] font-medium">+{c.extra}</span>
+                    </div>
+                  </td>
+                )}
+                {col('tags') && (
+                  <td className="px-4 py-4 text-center">
+                    {c.tagIcon === 'grid' ? (
+                      <LayoutGrid size={16} className="text-gray-400 mx-auto" />
+                    ) : (
+                      <Globe size={16} className="text-gray-400 mx-auto" />
+                    )}
+                  </td>
+                )}
+                {col('status') && (
+                  <td className="px-4 py-4">
+                    <StatusBadge status={c.status} />
+                  </td>
+                )}
                 <td className="px-4 py-4">
                   <button className="text-gray-400 hover:text-gray-600 transition-colors">
                     <MoreVertical size={16} />
