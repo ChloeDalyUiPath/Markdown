@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Tag, Plus, Calendar, Settings, Pencil, Check, Eye, EyeOff } from 'lucide-react'
+import { Tag, Plus, Calendar, Settings, Pencil, Check, Eye, EyeOff, ArrowUpRight } from 'lucide-react'
 
 const timeFilters = ['This week', 'Last week', 'This month', 'Last 6 months']
 
@@ -9,6 +9,7 @@ import ActionItems from './ActionItems'
 import ProductsTab from './ProductsTab'
 import CampaignsTab from './CampaignsTab'
 import CampaignDetail from './CampaignDetail'
+import CampaignCompare from './CampaignCompare'
 import CreateCampaignModal from './CreateCampaignModal'
 
 const ALL_TABS = ['Overview', 'Products', 'Campaigns']
@@ -28,6 +29,7 @@ export default function Dashboard() {
   const [timeFilter, setTimeFilter] = useState('This week')
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [selectedCampaign, setSelectedCampaign] = useState(null)
+  const [compareCampaigns, setCompareCampaigns] = useState(null)
   const [showCreate, setShowCreate] = useState(false)
 
   const [hiddenTabs, setHiddenTabs] = useState(new Set())
@@ -77,6 +79,10 @@ export default function Dashboard() {
     return <CampaignDetail campaign={selectedCampaign} onBack={() => setSelectedCampaign(null)} />
   }
 
+  if (compareCampaigns) {
+    return <CampaignCompare campaigns={compareCampaigns} onBack={() => setCompareCampaigns(null)} />
+  }
+
   return (
     <div className="p-6 min-w-0">
       {showCreate && <CreateCampaignModal onClose={() => setShowCreate(false)} />}
@@ -95,13 +101,22 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-[#2a44d4] hover:bg-[#2438b8] text-white px-4 py-2.5 rounded-lg font-medium text-sm transition-colors shrink-0"
-        >
-          Create campaign
-          <Plus size={15} />
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setActiveTab('Campaigns')}
+            className="flex items-center gap-2 border border-gray-200 text-gray-600 px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors"
+          >
+            Compare campaigns
+            <ArrowUpRight size={15} className="text-gray-400" />
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-[#2a44d4] hover:bg-[#2438b8] text-white px-4 py-2.5 rounded-lg font-medium text-sm transition-colors"
+          >
+            Create campaign
+            <Plus size={15} />
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -262,7 +277,12 @@ export default function Dashboard() {
 
       {activeTab === 'Products' && <ProductsTab />}
 
-      {activeTab === 'Campaigns' && <CampaignsTab onSelectCampaign={setSelectedCampaign} />}
+      {activeTab === 'Campaigns' && (
+        <CampaignsTab
+          onSelectCampaign={setSelectedCampaign}
+          onCompare={pair => setCompareCampaigns(pair)}
+        />
+      )}
     </div>
   )
 }

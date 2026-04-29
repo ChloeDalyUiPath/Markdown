@@ -8,22 +8,33 @@ const borderColors = {
   slate: 'border-l-slate-400',
 }
 
-export default function StatCard({ label, value, change, color, negative }) {
+export default function StatCard({ label, value, change, color, negative, delta, warning, timeframe }) {
   const isNegative = negative !== undefined
     ? negative
     : typeof change === 'string' && change.startsWith('-')
 
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 border-l-4 ${borderColors[color]} p-5`}>
-      <div className="flex items-center gap-1.5 mb-2">
-        <span className="text-sm font-medium text-gray-500">{label}</span>
-        <Info size={13} className="text-gray-400" />
+    <div className={`bg-white rounded-xl border border-gray-200 border-l-4 ${borderColors[color]} p-4`}>
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <span className="text-xs font-medium text-gray-500 leading-tight">{label}</span>
+        <Info size={11} className="text-gray-300 flex-shrink-0" />
       </div>
-      <div className="text-[28px] font-bold text-gray-900 leading-tight mb-1.5">{value}</div>
+      {timeframe && <div className="text-[10px] text-gray-400 mb-1">{timeframe}</div>}
+      <div className="text-2xl font-bold text-gray-900 leading-tight mb-1">{value}</div>
+      {delta && (
+        <div className={`text-xs font-semibold mb-0.5 ${isNegative ? 'text-red-500' : 'text-emerald-600'}`}>
+          {isNegative ? '↓' : '↑'} {delta}
+        </div>
+      )}
       {change != null && (
-        <div className={`flex items-center gap-1 text-xs font-medium ${isNegative ? 'text-red-500' : 'text-green-600'}`}>
-          {isNegative ? <TrendingDown size={12} /> : <TrendingUp size={12} />}
+        <div className={`flex items-center gap-1 text-[10px] ${isNegative ? 'text-red-400' : 'text-emerald-500'}`}>
+          {isNegative ? <TrendingDown size={10} /> : <TrendingUp size={10} />}
           <span>{change}</span>
+        </div>
+      )}
+      {warning && (
+        <div className="flex items-center gap-1 mt-1.5 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+          ⚠ {warning}
         </div>
       )}
     </div>

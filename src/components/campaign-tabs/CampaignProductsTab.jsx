@@ -3,8 +3,10 @@ import {
   Search, SlidersHorizontal, Columns2, ChevronDown, ChevronUp,
   TrendingUp, TrendingDown, ChevronLeft, ChevronRight,
   ChevronsLeft, ChevronsRight, Edit2, Settings, ShieldAlert,
-  AlertTriangle, CheckCircle2, LayoutGrid, Check,
+  AlertTriangle, CheckCircle2, LayoutGrid, Check, Lock, X, Plus,
 } from 'lucide-react'
+import { RL_CATEGORIES } from '../../data/rlStrategies'
+import CreateHitModal from '../CreateHitModal'
 
 // ─── Mock data ──────────────────────────────────────────────────────────────
 
@@ -83,6 +85,28 @@ const products = Array.from({ length: 8 }, (_, i) => ({
   predRevenue: ['£10.2K', '£8.1K', '£14.6K', '£5.8K', '£9.4K', '£6.3K', '£12.1K', '£4.2K'][i], predRevenueChange: '+2.4%',
 }))
 
+// ─── RL-specific data ─────────────────────────────────────────────────────────
+
+const RL_CAT_DATA = [
+  { rlCatId: 1, name: "Women's Polo",  products: 8200, optimised: 7800, avgMarkdown: '12%', sellThrough: '88%', sellThroughTarget: '85%', vstTarget: '+3%',  revenue: '£142K', revenueVsTarget: '+£8K',  avgMargin: '56%', stockCover: 1.8, guardrails: false, guardrailNote: null,                                   performance: 'on-track' },
+  { rlCatId: 2, name: 'Knitwear',      products: 6400, optimised: 5800, avgMarkdown: '22%', sellThrough: '76%', sellThroughTarget: '85%', vstTarget: '-9%',  revenue: '£96K',  revenueVsTarget: '-£14K', avgMargin: '48%', stockCover: 3.1, guardrails: true,  guardrailNote: 'Min margin 45%',                      performance: 'underperforming' },
+  { rlCatId: 3, name: 'Oxford Shirts', products: 5100, optimised: 4900, avgMarkdown: '15%', sellThrough: '84%', sellThroughTarget: '85%', vstTarget: '-1%',  revenue: '£78K',  revenueVsTarget: '-£2K',  avgMargin: '52%', stockCover: 2.1, guardrails: false, guardrailNote: null,                                   performance: 'at-risk' },
+  { rlCatId: 4, name: 'Chinos',        products: 4800, optimised: 4200, avgMarkdown: '28%', sellThrough: '72%', sellThroughTarget: '80%', vstTarget: '-8%',  revenue: '£61K',  revenueVsTarget: '-£11K', avgMargin: '44%', stockCover: 3.6, guardrails: true,  guardrailNote: 'Max discount 35%',                    performance: 'underperforming' },
+  { rlCatId: 5, name: 'Outerwear',     products: 4200, optimised: 3400, avgMarkdown: '38%', sellThrough: '64%', sellThroughTarget: '80%', vstTarget: '-16%', revenue: '£84K',  revenueVsTarget: '-£31K', avgMargin: '36%', stockCover: 4.8, guardrails: true,  guardrailNote: 'Min margin 35% · Max discount 45%', performance: 'underperforming' },
+  { rlCatId: 6, name: 'Accessories',   products: 2400, optimised: 2400, avgMarkdown: '8%',  sellThrough: '93%', sellThroughTarget: '85%', vstTarget: '+8%',  revenue: '£52K',  revenueVsTarget: '+£7K',  avgMargin: '64%', stockCover: 1.4, guardrails: false, guardrailNote: null,                                   performance: 'on-track' },
+]
+
+const RL_PRODUCTS = [
+  { id: 1, name: 'Polo Shirt Classic',  productId: '#RL-001', category: "Women's Polo",  season: 'SS 2026', status: 'Optimised', country: 'UK', sales: 312, salesChange: '+4.2%', revenue: '£28.4K', revenueChange: '+3.8%', margin: '58.2%', marginChange: '+1.4%', stock: 1.6, stockChange: '-0.2%', predStock: 280,  predStockChange: '-8.5%',  predDemand: '96K',  predDemandChange: '+2.4%', predMargin: '12%', predMarginChange: '+1.2%', predRevenue: '£14.2K', predRevenueChange: '+3.1%' },
+  { id: 2, name: 'Cable Knit Sweater',  productId: '#RL-002', category: 'Knitwear',      season: 'SS 2026', status: 'Original',  country: 'UK', sales: 198, salesChange: '-3.1%', revenue: '£18.6K', revenueChange: '-2.8%', margin: '47.4%', marginChange: '-2.1%', stock: 3.2, stockChange: '+0.8%', predStock: 510,  predStockChange: '+14.2%', predDemand: '74K',  predDemandChange: '-1.4%', predMargin: '8%',  predMarginChange: '-2.4%', predRevenue: '£8.1K',  predRevenueChange: '-3.2%' },
+  { id: 3, name: 'Oxford Pinpoint',     productId: '#RL-003', category: 'Oxford Shirts', season: 'SS 2026', status: 'Optimised', country: 'UK', sales: 245, salesChange: '+1.8%', revenue: '£21.2K', revenueChange: '+1.4%', margin: '53.6%', marginChange: '+0.6%', stock: 2.0, stockChange: '-0.4%', predStock: 380,  predStockChange: '-8.1%',  predDemand: '88K',  predDemandChange: '+1.6%', predMargin: '11%', predMarginChange: '+0.8%', predRevenue: '£11.4K', predRevenueChange: '+2.2%' },
+  { id: 4, name: 'Slim Chino Trouser',  productId: '#RL-004', category: 'Chinos',        season: 'SS 2026', status: 'Original',  country: 'UK', sales: 167, salesChange: '-4.8%', revenue: '£14.8K', revenueChange: '-5.2%', margin: '43.8%', marginChange: '-3.6%', stock: 3.8, stockChange: '+1.2%', predStock: 620,  predStockChange: '+22.1%', predDemand: '58K',  predDemandChange: '-3.8%', predMargin: '7%',  predMarginChange: '-3.2%', predRevenue: '£6.8K',  predRevenueChange: '-4.8%' },
+  { id: 5, name: 'Quilted Field Jacket',productId: '#RL-005', category: 'Outerwear',     season: 'SS 2026', status: 'Optimised', country: 'UK', sales: 142, salesChange: '-8.2%', revenue: '£28.6K', revenueChange: '-9.1%', margin: '36.4%', marginChange: '-6.2%', stock: 4.9, stockChange: '+2.1%', predStock: 820,  predStockChange: '+38.4%', predDemand: '46K',  predDemandChange: '-8.4%', predMargin: '6%',  predMarginChange: '-5.8%', predRevenue: '£8.4K',  predRevenueChange: '-8.6%' },
+  { id: 6, name: 'Canvas Belt',         productId: '#RL-006', category: 'Accessories',   season: 'SS 2026', status: 'Optimised', country: 'UK', sales: 428, salesChange: '+6.4%', revenue: '£12.8K', revenueChange: '+5.8%', margin: '65.2%', marginChange: '+2.4%', stock: 1.3, stockChange: '-0.6%', predStock: 180,  predStockChange: '-12.4%', predDemand: '148K', predDemandChange: '+4.8%', predMargin: '14%', predMarginChange: '+2.1%', predRevenue: '£7.2K',  predRevenueChange: '+4.4%' },
+  { id: 7, name: 'Polo Shirt Slim Fit', productId: '#RL-007', category: "Women's Polo",  season: 'SS 2026', status: 'Optimised', country: 'UK', sales: 284, salesChange: '+3.6%', revenue: '£24.2K', revenueChange: '+3.1%', margin: '56.8%', marginChange: '+1.2%', stock: 1.8, stockChange: '-0.3%', predStock: 310,  predStockChange: '-6.2%',  predDemand: '102K', predDemandChange: '+2.8%', predMargin: '12%', predMarginChange: '+1.4%', predRevenue: '£12.8K', predRevenueChange: '+2.8%' },
+  { id: 8, name: 'Merino Crewneck',     productId: '#RL-008', category: 'Knitwear',      season: 'SS 2026', status: 'Original',  country: 'UK', sales: 176, salesChange: '-2.4%', revenue: '£16.4K', revenueChange: '-2.1%', margin: '46.8%', marginChange: '-1.8%', stock: 2.8, stockChange: '+0.6%', predStock: 460,  predStockChange: '+9.8%',  predDemand: '68K',  predDemandChange: '-1.8%', predMargin: '8%',  predMarginChange: '-1.6%', predRevenue: '£7.6K',  predRevenueChange: '-2.4%' },
+]
+
 // ─── Column definitions ───────────────────────────────────────────────────────
 
 const CAT_COLS = [
@@ -154,14 +178,49 @@ function GuardrailBadge({ note }) {
   )
 }
 
+// ─── Scenario banner ──────────────────────────────────────────────────────────
+
+function ScenarioBanner({ savedScenario, onClear }) {
+  const { name, lockedCategoryNames } = savedScenario
+  return (
+    <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 mb-4">
+      <Lock size={14} className="text-indigo-500 flex-shrink-0" />
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-semibold text-indigo-900">Scenario applied: </span>
+        <span className="text-xs text-indigo-700">{name}</span>
+        {lockedCategoryNames.length > 0 && (
+          <div className="text-[11px] text-indigo-500 mt-0.5">
+            Locked categories: {lockedCategoryNames.join(' · ')}
+          </div>
+        )}
+      </div>
+      <button onClick={onClear} className="text-indigo-400 hover:text-indigo-600 transition-colors flex-shrink-0">
+        <X size={14} />
+      </button>
+    </div>
+  )
+}
+
+function isLockedCategory(catName, lockedNames) {
+  if (!lockedNames?.length) return false
+  const lower = catName.toLowerCase()
+  return lockedNames.some(n => {
+    const ln = n.toLowerCase()
+    return lower.includes(ln) || ln.includes(lower)
+  })
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function CampaignProductsTab({ status, initialFilter }) {
+export default function CampaignProductsTab({ status, initialFilter, savedScenario, onClearSavedScenario, isRL, rlLockedCats, onCreateHit, existingHitsCount = 3 }) {
   const isLive = status === 'Live'
   const [view, setView] = useState('Product Level')
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [filterPerf, setFilterPerf] = useState(initialFilter || null)
+  const [selectedCatIds, setSelectedCatIds] = useState(new Set())
+  const [selectedProductIds, setSelectedProductIds] = useState(new Set())
+  const [showHitModal, setShowHitModal] = useState(false)
 
   const [visibleCatCols, setVisibleCatCols] = useState(new Set(CAT_COLS.map(c => c.key)))
   const [visibleProdCols, setVisibleProdCols] = useState(new Set(PROD_COLS.map(c => c.key)))
@@ -198,14 +257,40 @@ export default function CampaignProductsTab({ status, initialFilter }) {
 
   const col = key => currentVisible.has(key)
 
-  const filteredCategories = categoryData.filter(c => {
+  function toggleCatId(id) {
+    setSelectedCatIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+  function toggleProductId(id) {
+    setSelectedProductIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+  function clearSelection() { setSelectedCatIds(new Set()); setSelectedProductIds(new Set()) }
+
+  function getPreselectedCategories() {
+    if (view === 'Category Level') {
+      return (isRL ? RL_CAT_DATA : categoryData)
+        .filter(c => selectedCatIds.has(c.rlCatId ?? c.id))
+        .map(c => c.name)
+    }
+    const selProds = (isRL ? RL_PRODUCTS : products).filter(p => selectedProductIds.has(p.id))
+    return [...new Set(selProds.map(p => p.category))]
+  }
+
+  const totalSelected = selectedCatIds.size + selectedProductIds.size
+
+  const sourceCatData = isRL ? RL_CAT_DATA : categoryData
+  const filteredCategories = sourceCatData.filter(c => {
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
     if (filterPerf === 'underperforming' && c.performance === 'on-track') return false
     return true
   })
+  const displayProducts = isRL ? RL_PRODUCTS : products
 
   return (
     <div>
+      {savedScenario && (
+        <ScenarioBanner savedScenario={savedScenario} onClear={onClearSavedScenario} />
+      )}
+
       {/* Summary card */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
         <div className="flex items-start justify-between">
@@ -316,6 +401,7 @@ export default function CampaignProductsTab({ status, initialFilter }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
+                  {isLive && <th className="w-10 px-3 py-3" />}
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 min-w-[160px]">Category</th>
                   {col('products') && (
                     <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">
@@ -346,10 +432,29 @@ export default function CampaignProductsTab({ status, initialFilter }) {
                 </tr>
               </thead>
               <tbody>
-                {filteredCategories.map((cat, i) => (
-                  <tr key={cat.id} className={`${i < filteredCategories.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50 transition-colors`}>
+                {filteredCategories.map((cat, i) => {
+                  const locked   = isLockedCategory(cat.name, savedScenario?.lockedCategoryNames)
+                  const rlCat    = isRL ? RL_CATEGORIES.find(c => c.name === cat.name) : null
+                  const rlLocked = rlCat ? rlLockedCats?.includes(rlCat.id) : false
+                  const rowLocked = locked || rlLocked
+                  return (
+                  <tr key={cat.rlCatId ?? cat.id} className={`${i < filteredCategories.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50 transition-colors ${rowLocked ? 'bg-indigo-50/30' : ''} ${selectedCatIds.has(cat.rlCatId ?? cat.id) ? 'bg-indigo-50/40' : ''}`}>
+                    {isLive && (
+                      <td className="w-10 px-3 py-3" onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={() => toggleCatId(cat.rlCatId ?? cat.id)}
+                          className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${selectedCatIds.has(cat.rlCatId ?? cat.id) ? 'bg-[#2a44d4] border-[#2a44d4]' : 'border-gray-300 hover:border-[#2a44d4]'}`}
+                        >
+                          {selectedCatIds.has(cat.rlCatId ?? cat.id) && <Check size={9} className="text-white" />}
+                        </button>
+                      </td>
+                    )}
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-gray-900 text-sm">{cat.name}</div>
+                      <div className="flex items-center gap-1.5">
+                        {rowLocked && <Lock size={11} className="text-indigo-400 flex-shrink-0" />}
+                        <span className={`font-semibold text-sm ${rowLocked ? 'text-indigo-700' : 'text-gray-900'}`}>{cat.name}</span>
+                        {rowLocked && <span className="text-[10px] font-medium text-indigo-500 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-full">Locked</span>}
+                      </div>
                       <div className="text-xs text-gray-400">{cat.products.toLocaleString()} products</div>
                     </td>
                     {col('products') && (
@@ -388,7 +493,8 @@ export default function CampaignProductsTab({ status, initialFilter }) {
                       </td>
                     )}
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -405,6 +511,7 @@ export default function CampaignProductsTab({ status, initialFilter }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
+                  {isLive && <th className="w-10 px-3 py-3" />}
                   <th className="text-left px-4 py-3 min-w-[140px]">
                     <div className="text-xs font-semibold text-gray-700">Product Name</div>
                     <div className="text-xs font-normal text-gray-400">Product ID</div>
@@ -425,8 +532,19 @@ export default function CampaignProductsTab({ status, initialFilter }) {
                 </tr>
               </thead>
               <tbody>
-                {products.map((p, i) => (
-                  <tr key={p.id} className={`${i < products.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50`}>
+                {displayProducts.map((p, i) => {
+                  return (
+                  <tr key={p.id} className={`${i < displayProducts.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50 ${selectedProductIds.has(p.id) ? 'bg-indigo-50/40' : ''}`}>
+                    {isLive && (
+                      <td className="w-10 px-3 py-3" onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={() => toggleProductId(p.id)}
+                          className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${selectedProductIds.has(p.id) ? 'bg-[#2a44d4] border-[#2a44d4]' : 'border-gray-300 hover:border-[#2a44d4]'}`}
+                        >
+                          {selectedProductIds.has(p.id) && <Check size={9} className="text-white" />}
+                        </button>
+                      </td>
+                    )}
                     <td className="px-4 py-3"><div className="font-semibold text-gray-900">{p.name}</div><div className="text-xs text-gray-400">{p.productId}</div></td>
                     {col('category') && <td className="px-3 py-3 text-xs text-gray-600">{p.category}</td>}
                     {col('season') && <td className="px-3 py-3 text-xs text-gray-600">{p.season}</td>}
@@ -447,7 +565,8 @@ export default function CampaignProductsTab({ status, initialFilter }) {
                     {col('predMargin') && <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.predMargin}</div><Delta value={p.predMarginChange} /></td>}
                     {col('predRevenue') && <td className="px-3 py-3 text-right"><div className="text-sm text-gray-900">{p.predRevenue}</div><Delta value={p.predRevenueChange} /></td>}
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -474,6 +593,44 @@ export default function CampaignProductsTab({ status, initialFilter }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Floating selection bar */}
+      {isLive && totalSelected > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+          <div className="flex items-center gap-4 bg-gray-900 text-white rounded-2xl px-5 py-3.5 shadow-2xl">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-[#2a44d4] flex items-center justify-center text-xs font-bold">
+                {totalSelected}
+              </div>
+              <span className="text-sm font-medium">
+                {view === 'Category Level'
+                  ? `${selectedCatIds.size} ${selectedCatIds.size === 1 ? 'category' : 'categories'} selected`
+                  : `${selectedProductIds.size} ${selectedProductIds.size === 1 ? 'product' : 'products'} selected`}
+              </span>
+            </div>
+            <div className="w-px h-5 bg-white/20" />
+            <button
+              onClick={() => setShowHitModal(true)}
+              className="flex items-center gap-1.5 bg-[#2a44d4] hover:bg-[#2438b8] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+            >
+              <Plus size={14} />
+              Create Hit
+            </button>
+            <button onClick={clearSelection} className="text-white/50 hover:text-white text-sm transition-colors">
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showHitModal && (
+        <CreateHitModal
+          onClose={() => setShowHitModal(false)}
+          onCreateHit={hit => { onCreateHit?.(hit); clearSelection() }}
+          existingHitsCount={existingHitsCount}
+          preselectedCategories={getPreselectedCategories()}
+        />
       )}
     </div>
   )

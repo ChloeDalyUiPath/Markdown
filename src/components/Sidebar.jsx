@@ -1,75 +1,129 @@
-import {
-  Home,
-  Layers,
-  ArrowUpRight,
-  FileUp,
-  BookOpen,
-  Sparkles,
-  Bell,
-  HelpCircle,
-  Settings,
-  ChevronRight,
-} from 'lucide-react'
-import logo from '../assets/logo.svg'
+import { Home, FileDown, BookOpen, Sparkles, Bell, HelpCircle, ChevronRight } from 'lucide-react'
+import peakLogo from '../assets/uipath-peak-logo.svg'
 
-function NavButton({ icon: Icon, active = false }) {
+const pricingIcon = 'https://www.figma.com/api/mcp/asset/da7ae3ba-01a6-4616-95ad-ce53e5af2474'
+const inventoryIcon = 'https://www.figma.com/api/mcp/asset/ae6d32d5-0b07-4504-8973-03a5bafc5379'
+const wayfinderIcon = 'https://www.figma.com/api/mcp/asset/9d4cf346-caaf-487b-bd89-04d6014c2796'
+
+function Divider() {
+  return <div className="w-full h-px" style={{ background: '#D4D5DE' }} />
+}
+
+function IconBtn({ children, active = false, size = 'md' }) {
+  const pad = size === 'sm' ? 'p-1.5' : 'p-2'
   return (
     <button
-      className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
-        active
-          ? 'bg-indigo-50 text-indigo-600'
-          : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'
+      className={`${pad} rounded-lg transition-colors flex items-center justify-center ${
+        active ? '' : 'hover:bg-black/5'
       }`}
+      style={active ? { background: '#EAECFB' } : {}}
     >
-      <Icon size={18} />
+      {children}
     </button>
   )
 }
 
-export default function Sidebar() {
+export default function Sidebar({ activePage = 'pricing', onPageChange }) {
   return (
-    <div className="w-[64px] bg-white border-r border-gray-200 flex flex-col items-center py-3 shrink-0">
-      {/* Logo */}
-      <img src={logo} alt="UiPath x PEAK" className="w-9 mb-2" />
+    <div
+      className="relative w-[56px] shrink-0 flex flex-col items-center justify-between py-6 px-2 overflow-visible z-20"
+      style={{
+        background: '#F9F9FE',
+        borderRight: '0.5px solid #D4D5DE',
+        boxShadow: '0px 4px 8px -2px rgba(9,33,167,0.08)',
+      }}
+    >
+      {/* Top group */}
+      <div className="flex flex-col items-center gap-10 w-full">
+        {/* Logo */}
+        <img src={peakLogo} alt="UiPath x PEAK" className="w-8 object-contain" />
+
+        <div className="flex flex-col items-center gap-6 w-full">
+          {/* Home */}
+          <button className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-black/5 transition-colors">
+            <Home size={20} strokeWidth={1.6} style={{ color: '#020D21' }} />
+          </button>
+
+          {/* App icons */}
+          <div className="flex flex-col items-center gap-4 w-full">
+            <button
+              onClick={() => onPageChange?.('pricing')}
+              className="p-2 rounded-lg transition-colors flex items-center justify-center"
+              style={activePage === 'pricing' ? { background: '#EAECFB' } : {}}
+            >
+              <img src={pricingIcon} alt="Pricing AI" className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => onPageChange?.('inventory')}
+              className="p-2 rounded-lg hover:bg-black/5 transition-colors flex items-center justify-center"
+            >
+              <img src={inventoryIcon} alt="Inventory AI" className="w-5 h-5" />
+            </button>
+          </div>
+
+          <Divider />
+
+          {/* Manage */}
+          <div className="flex flex-col items-center gap-4 w-full">
+            <span
+              className="text-[10px] uppercase tracking-widest"
+              style={{ color: '#687387', fontFamily: 'Inter, sans-serif' }}
+            >
+              Manage
+            </span>
+            <IconBtn>
+              <FileDown size={20} strokeWidth={1.6} style={{ color: '#687387' }} />
+            </IconBtn>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom group */}
+      <div className="flex flex-col items-center gap-6 w-full">
+        {/* Docs + Wayfinder */}
+        <div className="flex flex-col items-center gap-2 w-full">
+          <IconBtn>
+            <BookOpen size={20} strokeWidth={1.6} style={{ color: '#687387' }} />
+          </IconBtn>
+          <IconBtn>
+            <img src={wayfinderIcon} alt="AI Wayfinder" className="w-5 h-5" />
+          </IconBtn>
+        </div>
+
+        <Divider />
+
+        {/* Alerts + Help */}
+        <div className="flex flex-col items-center gap-4 w-full">
+          <IconBtn>
+            <Bell size={16} strokeWidth={1.6} style={{ color: '#687387' }} />
+          </IconBtn>
+          <IconBtn>
+            <HelpCircle size={16} strokeWidth={1.6} style={{ color: '#687387' }} />
+          </IconBtn>
+        </div>
+
+        <Divider />
+
+        {/* User avatar */}
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+          style={{ background: '#9009A2' }}
+        >
+          <span className="text-white text-[10px] font-medium">CD</span>
+        </div>
+      </div>
 
       {/* Collapse toggle */}
-      <button className="w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 mb-3">
-        <ChevronRight size={14} />
+      <button
+        className="absolute -right-[14px] top-8 flex items-center justify-center rounded-lg border px-1 py-4"
+        style={{
+          background: '#F9F9FE',
+          borderColor: '#D4D5DE',
+          boxShadow: '0px 4px 8px -2px rgba(9,33,167,0.08)',
+        }}
+      >
+        <ChevronRight size={14} style={{ color: '#687387' }} />
       </button>
-
-      {/* Top nav */}
-      <nav className="flex flex-col gap-1 items-center">
-        <NavButton icon={Home} />
-        <NavButton icon={Layers} active />
-        <NavButton icon={ArrowUpRight} />
-      </nav>
-
-      {/* Manage section */}
-      <div className="w-full px-3 my-3">
-        <div className="border-t border-gray-100" />
-        <p className="text-[9px] font-semibold text-gray-400 tracking-widest text-center mt-2 uppercase">
-          Manage
-        </p>
-      </div>
-
-      <NavButton icon={FileUp} />
-
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* Bottom nav */}
-      <nav className="flex flex-col gap-1 items-center mb-3">
-        <NavButton icon={BookOpen} />
-        <NavButton icon={Sparkles} />
-        <NavButton icon={Bell} />
-        <NavButton icon={HelpCircle} />
-        <NavButton icon={Settings} />
-      </nav>
-
-      {/* User avatar */}
-      <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
-        <span className="text-white text-xs font-semibold">Z</span>
-      </div>
     </div>
   )
 }

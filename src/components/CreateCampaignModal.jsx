@@ -4,12 +4,13 @@ import {
   Info, Megaphone, Tag, Percent, TrendingUp, Gift, Calendar, Pencil,
   SlidersHorizontal,
 } from 'lucide-react'
+import { MARKDOWN_RULES } from '../data/rlStrategies'
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
 const CAMPAIGN_TYPES = [
-  { id: 'promotional', label: 'Promotional Campaign', description: 'Choose from 3 different types of promotions', Icon: Megaphone },
-  { id: 'markdown',    label: 'Markdown Campaign',    description: 'Clear out stock e.g.',                       Icon: Tag },
+  { id: 'promotional', label: 'Promotional Campaign', description: 'Drive demand for new or core products through time-limited events', Icon: Megaphone },
+  { id: 'markdown',    label: 'Markdown Campaign',    description: 'Clear aged stock and hit sell-through targets with AI-optimised depth', Icon: Tag },
 ]
 
 const PROMO_STRATEGIES = [
@@ -31,26 +32,43 @@ const LOCATIONS = ['Spain', 'France', 'Germany', 'Italy', 'United Kingdom']
 
 const MESSAGING_OPTS = ['Up to 20% off', 'Up to 30% off', 'Up to 40% off', 'Up to 50% off']
 
-const STEP_CONFIG = {
+const MARKDOWN_STEPS = {
   1: { title: 'Create a Campaign',     subtitle: 'Provide details of your campaign.' },
   2: { title: 'Select Categories',     subtitle: 'Choose the categories to include.' },
-  3: { title: 'Configure Guardrails',  subtitle: 'Optional — set constraints for this campaign.' },
-  4: { title: 'Review & Create Draft', subtitle: 'Check everything before saving.' },
+  3: { title: 'Configure Guardrails',  subtitle: 'Optional — set floor constraints to protect margin.' },
+  4: { title: 'Select Guardrail Sets', subtitle: 'Pick two clearance scenarios to compare.' },
+  5: { title: 'Review & Create Draft', subtitle: 'Check everything before saving.' },
+}
+const PROMO_STEPS = {
+  1: { title: 'Create a Campaign',         subtitle: 'Provide details of your campaign.' },
+  2: { title: 'Select Categories',         subtitle: 'Choose the categories to include.' },
+  3: { title: 'Promotional Objectives',    subtitle: 'Set what you\'re trying to achieve and how aggressively.' },
+  4: { title: 'Review & Create Draft',     subtitle: 'Check everything before saving.' },
 }
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
-function ProgressBar({ step }) {
-  const pct = Math.round((step / 4) * 100)
+function ProgressBar({ step, total }) {
+  const pct = Math.round((step / total) * 100)
   return (
     <div>
       <div className="flex justify-between text-xs text-gray-400 mb-1.5">
-        <span>Step {step} of 4</span>
+        <span>Step {step} of {total}</span>
         <span>{pct}%</span>
       </div>
       <div className="h-1 bg-gray-100 rounded-full">
         <div className="h-full bg-[#2a44d4] rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
       </div>
+    </div>
+  )
+}
+
+function InlineStepper({ value, onChange, min = 0, max = 100, step = 5 }) {
+  return (
+    <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+      <span className="flex-1 px-3 py-2.5 text-sm text-gray-700">{value}</span>
+      <button onClick={() => onChange(Math.max(min, value - step))} className="px-3.5 py-2.5 hover:bg-gray-100 text-gray-500 border-l border-gray-200 text-base leading-none select-none">−</button>
+      <button onClick={() => onChange(Math.min(max, value + step))} className="px-3.5 py-2.5 hover:bg-gray-100 text-gray-500 border-l border-gray-200 text-base leading-none select-none">+</button>
     </div>
   )
 }
@@ -364,7 +382,83 @@ function Step2({ form, setForm }) {
   )
 }
 
-// ─── Step 3 ───────────────────────────────────────────────────────────────────
+// ─── Step 3 — Promo Objectives ────────────────────────────────────────────────
+
+const OPTIMIZATION_TARGETS = [
+  { id: 'revenue',  label: 'Revenue Lift',    description: 'Maximise incremental revenue driven by this campaign' },
+  { id: 'volume',   label: 'Volume',          description: 'Drive as many units sold as possible' },
+  { id: 'aov',      label: 'Avg Order Value', description: 'Encourage customers to buy more per order' },
+  { id: 'newcust',  label: 'New Customers',   description: 'Prioritise attracting customers who haven\'t bought before' },
+]
+
+function Step3Promo({ form, setForm }) {
+  const p = form.promoObjectives
+  function setP(key, val) { setForm(f => ({ ...f, promoObjectives: { ...f.promoObjectives, [key]: val } })) }
+
+  return (
+    <div className="px-6 py-5 space-y-5 overflow-y-auto" style={{ maxHeight: '62vh' }}>
+      {/* Optimization target */}
+      <div>
+        <Label>Optimization Target</Label>
+        <div className="space-y-2">
+          {OPTIMIZATION_TARGETS.map(t => {
+            const sel = p.target === t.id
+            return (
+              <button
+                key={t.id}
+                onClick={() => setP('target', t.id)}
+                className={`w-full flex items-center gap-3 border rounded-xl px-4 py-3 text-left transition-all ${sel ? 'border-[#2a44d4] bg-indigo-50/60' : 'border-gray-200 hover:border-gray-300 bg-white'}`}
+              >
+                <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${sel ? 'border-[#2a44d4]' : 'border-gray-300'}`}>
+                  {sel && <div className="w-2 h-2 rounded-full bg-[#2a44d4]" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-gray-900">{t.label}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">{t.description}</div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Targets */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label info>Revenue Lift Target</Label>
+          <InlineStepper value={p.revenueLiftTarget} onChange={v => setP('revenueLiftTarget', v)} min={0} max={50} step={5} />
+        </div>
+        <div>
+          <Label>Max Discount Depth</Label>
+          <InlineStepper value={p.maxDiscountDepth} onChange={v => setP('maxDiscountDepth', v)} min={0} max={60} step={5} />
+        </div>
+      </div>
+
+      {/* Price floor */}
+      <div>
+        <Label optional info>Price Floor</Label>
+        <Input
+          value={p.priceFloor}
+          onChange={v => setP('priceFloor', v)}
+          placeholder="e.g. £15 — items won't be promoted below this price"
+        />
+      </div>
+
+      {/* Messaging */}
+      <div>
+        <Label optional>Promotional Messaging</Label>
+        <Dropdown
+          value={p.messaging}
+          onChange={v => setP('messaging', v)}
+          options={MESSAGING_OPTS}
+          placeholder="Select messaging banner…"
+        />
+      </div>
+    </div>
+  )
+}
+
+// ─── Step 3 — Guardrails ──────────────────────────────────────────────────────
 
 function Step3({ form, setForm }) {
   const g = form.guardrails
@@ -430,9 +524,84 @@ function Step3({ form, setForm }) {
   )
 }
 
-// ─── Step 4 ───────────────────────────────────────────────────────────────────
+// ─── Step 4 — Strategies ─────────────────────────────────────────────────────
 
-function Step4({ form, onEdit }) {
+function Step4Strategies({ form, setForm }) {
+  const [showDescriptions, setShowDescriptions] = useState(false)
+  const rules = form.guardrailRules
+
+  function setRule(i, key, val) {
+    setForm(f => {
+      const next = [...f.guardrailRules]
+      next[i] = { ...next[i], [key]: val }
+      return { ...f, guardrailRules: next }
+    })
+  }
+
+  function showPct(stratId) { return ['pct-markdown', 'depth-coverage', 'layered'].includes(stratId) }
+  function showDepth(stratId) { return ['depth-coverage', 'layered'].includes(stratId) }
+
+  return (
+    <div className="px-6 py-5 space-y-5 overflow-y-auto" style={{ maxHeight: '62vh' }}>
+      {rules.map((rule, i) => (
+        <div key={i} className="space-y-3">
+          <Label>Guardrail Set {i === 0 ? 'A' : 'B'}</Label>
+          <Dropdown
+            value={rule.stratId ? (MARKDOWN_RULES.find(s => s.id === rule.stratId)?.label ?? '') : ''}
+            onChange={v => setRule(i, 'stratId', MARKDOWN_RULES.find(s => s.label === v)?.id ?? '')}
+            options={MARKDOWN_RULES.map(s => s.label)}
+            placeholder="Select a markdown rule…"
+          />
+          {showPct(rule.stratId) && (
+            <div className={`grid gap-4 ${showDepth(rule.stratId) ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              <div>
+                <Label>Percentage to Markdown</Label>
+                <InlineStepper value={rule.pctMarkdown} onChange={v => setRule(i, 'pctMarkdown', v)} />
+              </div>
+              {showDepth(rule.stratId) && (
+                <div>
+                  <Label>Required Markdown % Depth</Label>
+                  <InlineStepper value={rule.depthPct} onChange={v => setRule(i, 'depthPct', v)} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+
+      <div className="border border-gray-200 rounded-xl overflow-hidden">
+        <button
+          onClick={() => setShowDescriptions(v => !v)}
+          className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-amber-500 hover:bg-gray-50 transition-colors"
+        >
+          Rule Descriptions
+          <ChevronDown size={14} className={`text-amber-400 transition-transform ${showDescriptions ? 'rotate-180' : ''}`} />
+        </button>
+        {showDescriptions && (
+          <div className="px-4 pb-4 pt-3 space-y-3 border-t border-gray-100">
+            {rules.some(r => r.stratId) ? (
+              rules.map((rule, i) => {
+                const strat = MARKDOWN_RULES.find(s => s.id === rule.stratId)
+                return strat ? (
+                  <div key={i}>
+                    <div className="text-xs font-semibold text-gray-700 mb-0.5">Set {i === 0 ? 'A' : 'B'}: {strat.short}</div>
+                    <div className="text-xs text-gray-400 leading-snug">{strat.description}</div>
+                  </div>
+                ) : null
+              })
+            ) : (
+              <p className="text-xs text-gray-400">Select strategies above to see their descriptions.</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Step 5 — Review ─────────────────────────────────────────────────────────
+
+function Step5({ form, onEdit }) {
   const totalProducts = CATEGORIES
     .filter(c => form.selectedCategories.includes(c.id))
     .reduce((sum, c) => sum + c.count, 0)
@@ -471,39 +640,102 @@ function Step4({ form, onEdit }) {
         </div>
       </div>
 
-      {/* Applied Guardrails */}
-      <div className="border border-gray-200 rounded-xl p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900">Applied Guardrails</h3>
-          <button onClick={() => onEdit(3)} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <Pencil size={14} />
-          </button>
+      {/* Promotional Objectives — promo only */}
+      {form.type === 'promotional' && (
+        <div className="border border-gray-200 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-900">Promotional Objectives</h3>
+            <button onClick={() => onEdit(3)} className="text-gray-400 hover:text-gray-600 transition-colors">
+              <Pencil size={14} />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-xs">
+            {[
+              { label: 'Optimization Target', value: OPTIMIZATION_TARGETS.find(t => t.id === form.promoObjectives.target)?.label || '—' },
+              { label: 'Revenue Lift Target', value: form.promoObjectives.revenueLiftTarget ? `${form.promoObjectives.revenueLiftTarget}%` : '—' },
+              { label: 'Max Discount Depth', value: form.promoObjectives.maxDiscountDepth ? `${form.promoObjectives.maxDiscountDepth}%` : '—' },
+              { label: 'Price Floor', value: form.promoObjectives.priceFloor || '—' },
+              { label: 'Messaging', value: form.promoObjectives.messaging || '—' },
+            ].map(row => (
+              <div key={row.label}>
+                <div className="text-gray-400 mb-0.5">{row.label}</div>
+                <div className="font-medium text-gray-900">{row.value}</div>
+              </div>
+            ))}
+          </div>
         </div>
-        {hasGuardrails ? (
-          <>
-            <div className="flex items-center gap-2 mb-3 text-xs">
-              <span className="font-medium text-gray-700">Global Guardrails</span>
-              <span className="text-gray-300">|</span>
-              <span className="text-gray-500">Applied to all {form.selectedCategories.length} categories</span>
-            </div>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs mb-3">
-              <div>
-                <div className="text-gray-400 mb-0.5">Max Discount</div>
-                <div className="font-medium text-gray-900">{g.maxMarkdown}%</div>
+      )}
+
+      {/* Applied Guardrails — markdown only */}
+      {form.type !== 'promotional' && (
+        <div className="border border-gray-200 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-900">Applied Guardrails</h3>
+            <button onClick={() => onEdit(3)} className="text-gray-400 hover:text-gray-600 transition-colors">
+              <Pencil size={14} />
+            </button>
+          </div>
+          {hasGuardrails ? (
+            <>
+              <div className="flex items-center gap-2 mb-3 text-xs">
+                <span className="font-medium text-gray-700">Global Guardrails</span>
+                <span className="text-gray-300">|</span>
+                <span className="text-gray-500">Applied to all {form.selectedCategories.length} categories</span>
               </div>
-              <div>
-                <div className="text-gray-400 mb-0.5">Min Margin</div>
-                <div className="font-medium text-gray-900">{g.minMarkdown}%</div>
+              <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs mb-3">
+                <div>
+                  <div className="text-gray-400 mb-0.5">Max Discount</div>
+                  <div className="font-medium text-gray-900">{g.maxMarkdown}%</div>
+                </div>
+                <div>
+                  <div className="text-gray-400 mb-0.5">Min Margin</div>
+                  <div className="font-medium text-gray-900">{g.minMarkdown}%</div>
+                </div>
               </div>
+              <div className="text-xs text-gray-400">
+                Expires in <span className="font-medium text-gray-900">30 days</span>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-gray-400">No guardrails configured — click the edit icon to add some.</p>
+          )}
+        </div>
+      )}
+
+      {/* Guardrail Sets — markdown only */}
+      {form.type !== 'promotional' && (
+        <div className="border border-gray-200 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-900">Guardrail Sets</h3>
+            <button onClick={() => onEdit(4)} className="text-gray-400 hover:text-gray-600 transition-colors">
+              <Pencil size={14} />
+            </button>
+          </div>
+          {form.guardrailRules.some(r => r.stratId) ? (
+            <div className="space-y-3">
+              {form.guardrailRules.map((rule, i) => {
+                const strat = MARKDOWN_RULES.find(s => s.id === rule.stratId)
+                return strat ? (
+                  <div key={i} className="text-xs">
+                    <div className="text-gray-400 mb-0.5">Set {i === 0 ? 'A' : 'B'}</div>
+                    <div className="font-medium text-gray-900">{strat.label}</div>
+                    {['pct-markdown', 'depth-coverage', 'layered'].includes(rule.stratId) && (
+                      <div className="text-gray-500 mt-0.5">
+                        {rule.pctMarkdown}% of products
+                        {['depth-coverage', 'layered'].includes(rule.stratId) ? ` at ${rule.depthPct}% off` : ''}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div key={i} className="text-xs text-gray-400">Rule {i + 1}: —</div>
+                )
+              })}
             </div>
-            <div className="text-xs text-gray-400">
-              Expires in <span className="font-medium text-gray-900">30 days</span>
-            </div>
-          </>
-        ) : (
-          <p className="text-xs text-gray-400">No guardrails configured — click the edit icon to add some.</p>
-        )}
-      </div>
+          ) : (
+            <p className="text-xs text-gray-400">No strategies configured — click the edit icon to add some.</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -529,9 +761,18 @@ export default function CreateCampaignModal({ onClose, onCreated }) {
       minPctDiscountMessaging: '',
       requiresApproval: false,
     },
+    guardrailRules: [
+      { stratId: '', pctMarkdown: 30, depthPct: 30 },
+      { stratId: '', pctMarkdown: 30, depthPct: 30 },
+    ],
+    promoObjectives: { target: '', revenueLiftTarget: 10, maxDiscountDepth: 30, priceFloor: '', messaging: '' },
   })
 
-  const { title, subtitle } = STEP_CONFIG[step]
+  const isPromo = form.type === 'promotional'
+  const totalSteps = isPromo ? 4 : 5
+  const reviewStep = isPromo ? 4 : 5
+  const stepConf = isPromo ? PROMO_STEPS : MARKDOWN_STEPS
+  const { title, subtitle } = stepConf[step] || stepConf[1]
 
   function handleSubmit() {
     onCreated?.(form)
@@ -561,14 +802,15 @@ export default function CreateCampaignModal({ onClose, onCreated }) {
               <X size={13} />
             </button>
           </div>
-          <ProgressBar step={step} />
+          <ProgressBar step={step} total={totalSteps} />
         </div>
 
         {/* Body */}
         {step === 1 && <Step1 form={form} setForm={setForm} />}
         {step === 2 && <Step2 form={form} setForm={setForm} />}
-        {step === 3 && <Step3 form={form} setForm={setForm} />}
-        {step === 4 && <Step4 form={form} onEdit={setStep} />}
+        {step === 3 && (isPromo ? <Step3Promo form={form} setForm={setForm} /> : <Step3 form={form} setForm={setForm} />)}
+        {step === 4 && !isPromo && <Step4Strategies form={form} setForm={setForm} />}
+        {((isPromo && step === 4) || (!isPromo && step === 5)) && <Step5 form={form} onEdit={setStep} />}
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
@@ -577,16 +819,16 @@ export default function CreateCampaignModal({ onClose, onCreated }) {
             Cancel
           </button>
           <div className="flex items-center gap-3">
-            {step === 3 && (
-              <button onClick={() => setStep(4)}
+            {!isPromo && (step === 3 || step === 4) && (
+              <button onClick={() => setStep(s => s + 1)}
                 className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors">
                 Skip
               </button>
             )}
             <button
-              onClick={step === 4 ? handleSubmit : () => setStep(s => s + 1)}
+              onClick={step === reviewStep ? handleSubmit : () => setStep(s => s + 1)}
               className="flex items-center gap-2 bg-[#2a44d4] hover:bg-[#2438b8] text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
-              {step === 4 ? 'Create Draft' : <> Next <ChevronRight size={15} /></>}
+              {step === reviewStep ? 'Create Draft' : <> Next <ChevronRight size={15} /></>}
             </button>
           </div>
         </div>
