@@ -1,8 +1,8 @@
 import { Home, FileDown, BookOpen, Sparkles, Bell, HelpCircle, ChevronRight } from 'lucide-react'
 import peakLogo from '../assets/uipath-peak-logo.svg'
+import pricingIcon from '../assets/pricing-icon.svg'
+import inventoryIcon from '../assets/inventory-icon.svg'
 
-const pricingIcon = 'https://www.figma.com/api/mcp/asset/da7ae3ba-01a6-4616-95ad-ce53e5af2474'
-const inventoryIcon = 'https://www.figma.com/api/mcp/asset/ae6d32d5-0b07-4504-8973-03a5bafc5379'
 const wayfinderIcon = 'https://www.figma.com/api/mcp/asset/9d4cf346-caaf-487b-bd89-04d6014c2796'
 
 function Divider() {
