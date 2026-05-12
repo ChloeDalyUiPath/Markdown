@@ -41,6 +41,22 @@ const campaigns = [
       { name: 'Event 1: Flash 20% off trainers', discount: '20% off', status: 'Completed' },
     ],
   },
+  // ── LIVE · MARKDOWN · AT RISK (multi-brand) ────────────────────────────────
+  {
+    id: 100, name: 'END Clothing AW 25 Markdown', type: 'Markdown', status: 'Live',
+    isMultiBrand: true,
+    performance: 'at-risk', locations: 'UK, US, EU',
+    dates: '10/03/2025 – 30/04/2025', categories: ['Outerwear', 'Footwear'], extra: 3,
+    optimizedProducts: '41,200 / 68,400',
+    sellThrough: '54%', revenue: '£186,240', margin: '32%',
+    revenuePlan: '£280,000', sellThroughPlan: '72%', marginPlan: '38%',
+    elapsed: { pct: 62, days: 13, total: 21 },
+    campaignHits: 2,
+    hits: [
+      { name: 'Hit 1: Initial 15% markdown', discount: '15% off', status: 'Completed' },
+      { name: 'Hit 2: Extra 25% on outerwear', discount: '25% off', status: 'Live' },
+    ],
+  },
   // ── LIVE · MARKDOWN · AT RISK ────────────────────────────────────────
   {
     id: 7, name: 'Menswear Summer Edit SS 26', type: 'Markdown', status: 'Live',
@@ -141,12 +157,21 @@ const campaigns = [
   // ── OPTIMISED ────────────────────────────────────────────────────────
   {
     id: 0, name: 'Ralph Lauren Heritage Edit SS 26', type: 'Markdown', status: 'Optimised',
+    isRL: true,
     performance: null, locations: 'UK', dates: '01/05/2026 – 30/06/2026',
     categories: ["Women's Polo", 'Knitwear'], extra: 4,
     optimizedProducts: '38,200 / 42,800',
     sellThrough: null, revenue: null, margin: null,
     revenuePlan: null, sellThroughPlan: null, marginPlan: null, elapsed: null,
     campaignHits: 0, hits: [],
+    guardrailConfig: {
+      setARule: 'Only Force Eligible Products',
+      setBRule: '40% of Products at 30% Off',
+      categoryAssignments: {
+        "Women's Polo": 'A', 'Knitwear': 'B', 'Oxford Shirts': 'A',
+        'Chinos': 'A', 'Outerwear': 'B', 'Accessories': 'A',
+      },
+    },
   },
   {
     id: 11, name: 'Black Friday Weekend 2026', type: 'Promo', status: 'Optimised',
@@ -217,6 +242,28 @@ const campaigns = [
   },
 
   // ── COMPLETED ────────────────────────────────────────────────────────
+  {
+    id: 20, name: 'Ralph Lauren Country Club AW 25', type: 'Markdown', status: 'Completed',
+    isRL: true,
+    performance: null, locations: 'UK, France', dates: '01/10/2025 – 30/11/2025',
+    categories: ["Women's Polo", 'Knitwear'], extra: 4,
+    optimizedProducts: '39,600 / 41,200',
+    sellThrough: '71%', revenue: '£96,400', margin: '36%',
+    revenuePlan: '£112,000', sellThroughPlan: '76%', marginPlan: '38%', elapsed: null,
+    campaignHits: 2,
+    hits: [
+      { name: "Hit 1: Initial markdown", discount: '20% off', status: 'Completed' },
+      { name: "Hit 2: Final clearance push", discount: '35% off', status: 'Completed' },
+    ],
+    guardrailConfig: {
+      setARule: "Don't Force Any Line",
+      setBRule: 'Force 50% of Products to Have Markdowns',
+      categoryAssignments: {
+        "Women's Polo": 'B', 'Knitwear': 'B', 'Oxford Shirts': 'B',
+        'Chinos': 'A', 'Outerwear': 'A', 'Accessories': 'A',
+      },
+    },
+  },
   {
     id: 16, name: 'Denim & Tailoring Year-End', type: 'Markdown', status: 'Completed',
     performance: null, locations: 'UK', dates: '26/12/2025 – 15/01/2026',

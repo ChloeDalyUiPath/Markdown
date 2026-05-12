@@ -35,9 +35,8 @@ const MESSAGING_OPTS = ['Up to 20% off', 'Up to 30% off', 'Up to 40% off', 'Up t
 const MARKDOWN_STEPS = {
   1: { title: 'Create a Campaign',     subtitle: 'Provide details of your campaign.' },
   2: { title: 'Select Categories',     subtitle: 'Choose the categories to include.' },
-  3: { title: 'Configure Guardrails',  subtitle: 'Optional — set floor constraints to protect margin.' },
-  4: { title: 'Select Guardrail Sets', subtitle: 'Pick two clearance scenarios to compare.' },
-  5: { title: 'Review & Create Draft', subtitle: 'Check everything before saving.' },
+  3: { title: 'Guardrails & Sets',     subtitle: 'Optional — configure constraints and clearance scenarios.' },
+  4: { title: 'Review & Create Draft', subtitle: 'Check everything before saving.' },
 }
 const PROMO_STEPS = {
   1: { title: 'Create a Campaign',         subtitle: 'Provide details of your campaign.' },
@@ -458,78 +457,14 @@ function Step3Promo({ form, setForm }) {
   )
 }
 
-// ─── Step 3 — Guardrails ──────────────────────────────────────────────────────
+// ─── Step 3 — Guardrails + Sets (markdown only) ───────────────────────────────
 
-function Step3({ form, setForm }) {
-  const g = form.guardrails
-  function setG(key, val) { setForm(f => ({ ...f, guardrails: { ...f.guardrails, [key]: val } })) }
-
-  return (
-    <div className="px-6 py-5 space-y-4 overflow-y-auto" style={{ maxHeight: '62vh' }}>
-      {/* Min / Max markdown */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Min markdown %</Label>
-          <Stepper value={g.minMarkdown} onChange={v => setG('minMarkdown', v)} />
-        </div>
-        <div>
-          <Label>Max markdown %</Label>
-          <Stepper value={g.maxMarkdown} onChange={v => setG('maxMarkdown', v)} />
-        </div>
-      </div>
-
-      {/* Min gross margin */}
-      <div>
-        <Label>Min gross margin minimum target (€)</Label>
-        <Input value={g.minGrossMargin} onChange={v => setG('minGrossMargin', v)} placeholder="e.g. $12,000" />
-      </div>
-
-      {/* Messaging discount + min % */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Messaging discount</Label>
-          <Dropdown value={g.messagingDiscount} onChange={v => setG('messagingDiscount', v)} options={MESSAGING_OPTS} placeholder="Up to 40% off" />
-        </div>
-        <div>
-          <Label info>Min % of products with discount messaging</Label>
-          <Stepper value={g.minPctDiscountMessaging} onChange={v => setG('minPctDiscountMessaging', v)} />
-        </div>
-      </div>
-
-      {/* Price bounds */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Price bounds lower</Label>
-          <button className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-400 hover:border-gray-300">
-            Select one or multiple bounds <ChevronDown size={14} className="flex-shrink-0" />
-          </button>
-        </div>
-        <div>
-          <Label>Price bounds upper</Label>
-          <button className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-400 hover:border-gray-300">
-            Select one or multiple bounds <ChevronDown size={14} className="flex-shrink-0" />
-          </button>
-        </div>
-      </div>
-
-      {/* Requires Approval */}
-      <div className="flex items-start justify-between gap-4 pt-1 pb-1">
-        <div>
-          <div className="text-sm font-medium text-gray-900 mb-0.5">Requires Approval</div>
-          <div className="text-xs text-gray-400">Manager approval needed before campaign goes live</div>
-        </div>
-        <Toggle value={g.requiresApproval} onChange={v => setG('requiresApproval', v)} />
-      </div>
-    </div>
-  )
-}
-
-// ─── Step 4 — Strategies ─────────────────────────────────────────────────────
-
-function Step4Strategies({ form, setForm }) {
+function Step3Markdown({ form, setForm }) {
   const [showDescriptions, setShowDescriptions] = useState(false)
+  const g = form.guardrails
   const rules = form.guardrailRules
 
+  function setG(key, val) { setForm(f => ({ ...f, guardrails: { ...f.guardrails, [key]: val } })) }
   function setRule(i, key, val) {
     setForm(f => {
       const next = [...f.guardrailRules]
@@ -537,63 +472,107 @@ function Step4Strategies({ form, setForm }) {
       return { ...f, guardrailRules: next }
     })
   }
-
-  function showPct(stratId) { return ['pct-markdown', 'depth-coverage', 'layered'].includes(stratId) }
+  function showPct(stratId)   { return ['pct-markdown', 'depth-coverage', 'layered'].includes(stratId) }
   function showDepth(stratId) { return ['depth-coverage', 'layered'].includes(stratId) }
 
   return (
-    <div className="px-6 py-5 space-y-5 overflow-y-auto" style={{ maxHeight: '62vh' }}>
-      {rules.map((rule, i) => (
-        <div key={i} className="space-y-3">
-          <Label>Guardrail Set {i === 0 ? 'A' : 'B'}</Label>
-          <Dropdown
-            value={rule.stratId ? (MARKDOWN_RULES.find(s => s.id === rule.stratId)?.label ?? '') : ''}
-            onChange={v => setRule(i, 'stratId', MARKDOWN_RULES.find(s => s.label === v)?.id ?? '')}
-            options={MARKDOWN_RULES.map(s => s.label)}
-            placeholder="Select a markdown rule…"
-          />
-          {showPct(rule.stratId) && (
-            <div className={`grid gap-4 ${showDepth(rule.stratId) ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              <div>
-                <Label>Percentage to Markdown</Label>
-                <InlineStepper value={rule.pctMarkdown} onChange={v => setRule(i, 'pctMarkdown', v)} />
-              </div>
-              {showDepth(rule.stratId) && (
-                <div>
-                  <Label>Required Markdown % Depth</Label>
-                  <InlineStepper value={rule.depthPct} onChange={v => setRule(i, 'depthPct', v)} />
+    <div className="px-6 py-5 space-y-4 overflow-y-auto" style={{ maxHeight: '62vh' }}>
+
+      {/* ── Guardrails ─────────────────────────────── */}
+      <div>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Guardrails</p>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Min markdown %</Label>
+              <Stepper value={g.minMarkdown} onChange={v => setG('minMarkdown', v)} />
+            </div>
+            <div>
+              <Label>Max markdown %</Label>
+              <Stepper value={g.maxMarkdown} onChange={v => setG('maxMarkdown', v)} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Messaging discount</Label>
+              <Dropdown value={g.messagingDiscount} onChange={v => setG('messagingDiscount', v)} options={MESSAGING_OPTS} placeholder="Up to 40% off" />
+            </div>
+            <div>
+              <Label info>Min % of products with discount messaging</Label>
+              <Stepper value={g.minPctDiscountMessaging} onChange={v => setG('minPctDiscountMessaging', v)} />
+            </div>
+          </div>
+
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-sm font-medium text-gray-900 mb-0.5">Requires Approval</div>
+              <div className="text-xs text-gray-400">Manager approval needed before campaign goes live</div>
+            </div>
+            <Toggle value={g.requiresApproval} onChange={v => setG('requiresApproval', v)} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Guardrail Sets ─────────────────────────── */}
+      <div className="border-t border-gray-100 pt-4">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Guardrail Sets</p>
+        <p className="text-xs text-gray-400 mb-4">Pick two clearance scenarios to compare after optimisation.</p>
+
+        <div className="space-y-5">
+          {rules.map((rule, i) => (
+            <div key={i} className="space-y-2.5">
+              <Label>Set {i === 0 ? 'A' : 'B'}</Label>
+              <Dropdown
+                value={rule.stratId ? (MARKDOWN_RULES.find(s => s.id === rule.stratId)?.label ?? '') : ''}
+                onChange={v => setRule(i, 'stratId', MARKDOWN_RULES.find(s => s.label === v)?.id ?? '')}
+                options={MARKDOWN_RULES.map(s => s.label)}
+                placeholder="Select a markdown rule…"
+              />
+              {showPct(rule.stratId) && (
+                <div className={`grid gap-4 ${showDepth(rule.stratId) ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  <div>
+                    <Label>Percentage to Markdown</Label>
+                    <InlineStepper value={rule.pctMarkdown} onChange={v => setRule(i, 'pctMarkdown', v)} />
+                  </div>
+                  {showDepth(rule.stratId) && (
+                    <div>
+                      <Label>Required Markdown % Depth</Label>
+                      <InlineStepper value={rule.depthPct} onChange={v => setRule(i, 'depthPct', v)} />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-        </div>
-      ))}
+          ))}
 
-      <div className="border border-gray-200 rounded-xl overflow-hidden">
-        <button
-          onClick={() => setShowDescriptions(v => !v)}
-          className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-amber-500 hover:bg-gray-50 transition-colors"
-        >
-          Rule Descriptions
-          <ChevronDown size={14} className={`text-amber-400 transition-transform ${showDescriptions ? 'rotate-180' : ''}`} />
-        </button>
-        {showDescriptions && (
-          <div className="px-4 pb-4 pt-3 space-y-3 border-t border-gray-100">
-            {rules.some(r => r.stratId) ? (
-              rules.map((rule, i) => {
-                const strat = MARKDOWN_RULES.find(s => s.id === rule.stratId)
-                return strat ? (
-                  <div key={i}>
-                    <div className="text-xs font-semibold text-gray-700 mb-0.5">Set {i === 0 ? 'A' : 'B'}: {strat.short}</div>
-                    <div className="text-xs text-gray-400 leading-snug">{strat.description}</div>
-                  </div>
-                ) : null
-              })
-            ) : (
-              <p className="text-xs text-gray-400">Select strategies above to see their descriptions.</p>
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <button
+              onClick={() => setShowDescriptions(v => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-amber-500 hover:bg-gray-50 transition-colors"
+            >
+              Rule Descriptions
+              <ChevronDown size={14} className={`text-amber-400 transition-transform ${showDescriptions ? 'rotate-180' : ''}`} />
+            </button>
+            {showDescriptions && (
+              <div className="px-4 pb-4 pt-3 space-y-3 border-t border-gray-100">
+                {rules.some(r => r.stratId) ? (
+                  rules.map((rule, i) => {
+                    const strat = MARKDOWN_RULES.find(s => s.id === rule.stratId)
+                    return strat ? (
+                      <div key={i}>
+                        <div className="text-xs font-semibold text-gray-700 mb-0.5">Set {i === 0 ? 'A' : 'B'}: {strat.short}</div>
+                        <div className="text-xs text-gray-400 leading-snug">{strat.description}</div>
+                      </div>
+                    ) : null
+                  })
+                ) : (
+                  <p className="text-xs text-gray-400">Select strategies above to see their descriptions.</p>
+                )}
+              </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
@@ -707,7 +686,7 @@ function Step5({ form, onEdit }) {
         <div className="border border-gray-200 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-900">Guardrail Sets</h3>
-            <button onClick={() => onEdit(4)} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <button onClick={() => onEdit(3)} className="text-gray-400 hover:text-gray-600 transition-colors">
               <Pencil size={14} />
             </button>
           </div>
@@ -769,8 +748,8 @@ export default function CreateCampaignModal({ onClose, onCreated }) {
   })
 
   const isPromo = form.type === 'promotional'
-  const totalSteps = isPromo ? 4 : 5
-  const reviewStep = isPromo ? 4 : 5
+  const totalSteps = 4
+  const reviewStep = 4
   const stepConf = isPromo ? PROMO_STEPS : MARKDOWN_STEPS
   const { title, subtitle } = stepConf[step] || stepConf[1]
 
@@ -808,9 +787,8 @@ export default function CreateCampaignModal({ onClose, onCreated }) {
         {/* Body */}
         {step === 1 && <Step1 form={form} setForm={setForm} />}
         {step === 2 && <Step2 form={form} setForm={setForm} />}
-        {step === 3 && (isPromo ? <Step3Promo form={form} setForm={setForm} /> : <Step3 form={form} setForm={setForm} />)}
-        {step === 4 && !isPromo && <Step4Strategies form={form} setForm={setForm} />}
-        {((isPromo && step === 4) || (!isPromo && step === 5)) && <Step5 form={form} onEdit={setStep} />}
+        {step === 3 && (isPromo ? <Step3Promo form={form} setForm={setForm} /> : <Step3Markdown form={form} setForm={setForm} />)}
+        {step === 4 && <Step5 form={form} onEdit={setStep} />}
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
@@ -819,7 +797,7 @@ export default function CreateCampaignModal({ onClose, onCreated }) {
             Cancel
           </button>
           <div className="flex items-center gap-3">
-            {!isPromo && (step === 3 || step === 4) && (
+            {!isPromo && step === 3 && (
               <button onClick={() => setStep(s => s + 1)}
                 className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors">
                 Skip

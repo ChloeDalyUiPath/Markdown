@@ -15,6 +15,7 @@ import {
   CalendarDays,
   Copy,
   Archive,
+  Save,
 } from 'lucide-react'
 import CampaignOverviewTab from './campaign-tabs/CampaignOverviewTab'
 import CampaignProductsTab from './campaign-tabs/CampaignProductsTab'
@@ -35,6 +36,43 @@ const INITIAL_CAMPAIGN_HITS = [
   { id: 3, name: 'Hit 3: Final clearance', discount: '45% Discount', categories: '12 Categories', status: 'Draft', recommended: true, sellThrough: null, revenue: null, units: '— / 45 target', perDay: '—' },
   { id: 2, name: 'Hit 2: Extra 20% off slow movers', discount: '20% Discount', categories: '4 Categories', status: 'Live', alert: '51 units needed to hit target', daysLeft: '3d left', sellThrough: '66%', revenue: '£1.5K+', units: '125 / 176 units sold', perDay: '£1.3K /day' },
   { id: 1, name: 'Hit 1: Initial 5% discount', discount: '5% off', categories: '10 Categories', status: 'Completed', missedTarget: 'Missed target by 5%', sellThrough: '78%', revenue: '£2.5K+', units: '34 / 45 units sold', perDay: '£1.3K /day' },
+]
+
+const END_TIMELINE_HITS = [
+  { id: 1, label: 'Hit 1', pct: 30, status: 'Completed', date: '14/03' },
+  { id: 2, label: 'Hit 2', pct: 60, status: 'Live',      date: '22/03' },
+]
+
+const END_CAMPAIGN_HITS = [
+  {
+    id: 2,
+    name: 'Hit 2: Extra 25% off outerwear + footwear',
+    discount: '25% Discount', categories: '4 Categories', status: 'Live',
+    recommended: true, alert: '£94K stock at cost still exposed', daysLeft: '8d left',
+    sellThrough: '58%', revenue: '£18.2K', margin: '29%',
+    stockAtCost: '£620K remaining', units: '2,840 / 4,890 units',
+    brands: [
+      { name: 'Stone Island', sellThrough: 48, stockQuality: 'limited',    skus: 12, note: '6 SKUs with broken size runs — limited markdown impact' },
+      { name: 'Nike',         sellThrough: 74, stockQuality: 'full',       skus: 28, note: null },
+      { name: 'New Balance',  sellThrough: 66, stockQuality: 'good',       skus: 16, note: null },
+      { name: 'Carhartt',     sellThrough: 38, stockQuality: 'fragmented', skus: 8,  note: 'XS / XL only — deep markdown unlikely to clear' },
+    ],
+  },
+  {
+    id: 1,
+    name: 'Hit 1: Initial 15% across all categories',
+    discount: '15% Discount', categories: '7 Categories', status: 'Completed',
+    recommended: false, missedTarget: 'Missed sell-through target by 18pp',
+    sellThrough: '68%', revenue: '£168K', margin: '36%',
+    stockAtCost: '£220K cleared', units: '8,200 / 11,400 units',
+    brands: [
+      { name: 'Stone Island', sellThrough: 52, stockQuality: 'limited',    skus: 12, note: '8 SKUs with broken size runs' },
+      { name: 'Nike',         sellThrough: 82, stockQuality: 'full',       skus: 28, note: null },
+      { name: 'New Balance',  sellThrough: 76, stockQuality: 'good',       skus: 16, note: null },
+      { name: 'Carhartt',     sellThrough: 44, stockQuality: 'fragmented', skus: 8,  note: 'Carry-over risk — only XS / XL remain' },
+      { name: 'adidas',       sellThrough: 72, stockQuality: 'full',       skus: 22, note: null },
+    ],
+  },
 ]
 
 const tabs = ['Overview', 'Products & Categories', 'Scenario planning', 'Settings']
@@ -59,7 +97,40 @@ function StatusBadge({ status }) {
   )
 }
 
-function HeaderActions({ status, onCreateHit }) {
+function UnsavedChangesModal({ targetTab, onSaveAndSwitch, onDiscardAndSwitch, onCancel }) {
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <h2 className="text-base font-bold text-gray-900 mb-1.5">Unsaved changes</h2>
+        <p className="text-sm text-gray-500 mb-5">
+          You have unsaved changes on this tab. What would you like to do before switching to <strong>{targetTab}</strong>?
+        </p>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={onSaveAndSwitch}
+            className="w-full flex items-center justify-center gap-2 bg-[#2a44d4] hover:bg-[#2438b8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+          >
+            <Save size={14} /> Save changes &amp; switch
+          </button>
+          <button
+            onClick={onDiscardAndSwitch}
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Discard changes &amp; switch
+          </button>
+          <button
+            onClick={onCancel}
+            className="w-full px-4 py-2.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function HeaderActions({ status, onCreateHit, onSave }) {
   if (status === 'Draft' || status === 'Pre-optimisation') return (
     <button className="flex items-center gap-1.5 bg-[#2a44d4] hover:bg-[#2438b8] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
       <Sparkles size={14} />
@@ -68,8 +139,9 @@ function HeaderActions({ status, onCreateHit }) {
   )
   if (status === 'Optimised') return (
     <div className="flex items-center gap-2">
-      <button className="flex items-center gap-1.5 border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-        Edit scenario
+      <button onClick={onSave} className="flex items-center gap-1.5 border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+        <Save size={14} />
+        Save campaign updates
       </button>
       <button className="flex items-center gap-1.5 bg-[#2a44d4] hover:bg-[#2438b8] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
         <Zap size={14} />
@@ -101,9 +173,45 @@ export default function CampaignDetail({ campaign, onBack }) {
   const [showMenu, setShowMenu] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showCreateHitModal, setShowCreateHitModal] = useState(false)
-  const [timelineHits, setTimelineHits] = useState(INITIAL_TIMELINE_HITS)
-  const [campaignHitsData, setCampaignHitsData] = useState(INITIAL_CAMPAIGN_HITS)
+  const [timelineHits, setTimelineHits] = useState(campaign.isMultiBrand ? END_TIMELINE_HITS : INITIAL_TIMELINE_HITS)
+  const [campaignHitsData, setCampaignHitsData] = useState(campaign.isMultiBrand ? END_CAMPAIGN_HITS : INITIAL_CAMPAIGN_HITS)
+  const [isDirty, setIsDirty] = useState(false)
+  const [pendingTab, setPendingTab] = useState(null)
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [saveFlash, setSaveFlash] = useState(false)
   const menuRef = useRef(null)
+
+  function handleTabClick(tab) {
+    if (isDirty && tab !== activeTab) {
+      setPendingTab(tab)
+      setShowSaveModal(true)
+    } else {
+      setActiveTab(tab)
+      if (tab !== 'Products & Categories') setProductFilter(null)
+    }
+  }
+
+  function handleSave() {
+    setIsDirty(false)
+    setSaveFlash(true)
+    setTimeout(() => setSaveFlash(false), 2000)
+  }
+
+  function handleSaveAndSwitch() {
+    handleSave()
+    setShowSaveModal(false)
+    setActiveTab(pendingTab)
+    if (pendingTab !== 'Products & Categories') setProductFilter(null)
+    setPendingTab(null)
+  }
+
+  function handleDiscardAndSwitch() {
+    setIsDirty(false)
+    setShowSaveModal(false)
+    setActiveTab(pendingTab)
+    if (pendingTab !== 'Products & Categories') setProductFilter(null)
+    setPendingTab(null)
+  }
 
   function handleCreateHit(newHit) {
     const lastHit = timelineHits[timelineHits.length - 1]
@@ -220,7 +328,7 @@ export default function CampaignDetail({ campaign, onBack }) {
               </div>
             )}
           </div>
-          <HeaderActions status={status} onCreateHit={() => setShowCreateHitModal(true)} />
+          <HeaderActions status={status} onCreateHit={() => setShowCreateHitModal(true)} onSave={handleSave} />
         </div>
       </div>
 
@@ -276,14 +384,17 @@ export default function CampaignDetail({ campaign, onBack }) {
           {tabs.map((tab) => (
             <button
               key={tab}
-              onClick={() => { setActiveTab(tab); if (tab !== 'Products & Categories') setProductFilter(null) }}
-              className={`pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
+              onClick={() => handleTabClick(tab)}
+              className={`pb-3 text-sm font-medium transition-colors whitespace-nowrap relative ${
                 activeTab === tab
                   ? 'text-[#2a44d4] border-b-2 border-[#2a44d4]'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               {tab}
+              {isDirty && tab === activeTab && (
+                <span className="absolute -top-0.5 -right-2.5 w-1.5 h-1.5 rounded-full bg-amber-400" />
+              )}
             </button>
           ))}
         </div>
@@ -297,6 +408,7 @@ export default function CampaignDetail({ campaign, onBack }) {
           onNavigateToTab={tab => setActiveTab(tab)}
           timelineHits={timelineHits}
           campaignHitsData={campaignHitsData}
+          isMultiBrand={campaign.isMultiBrand}
         />
       )}
       {activeTab === 'Products & Categories' && (
@@ -305,23 +417,26 @@ export default function CampaignDetail({ campaign, onBack }) {
           initialFilter={productFilter}
           savedScenario={savedScenario}
           onClearSavedScenario={() => setSavedScenario(null)}
-          isRL={campaign.id === 0}
-          rlLockedCats={campaign.id === 0 ? rlLockedCats : undefined}
+          isRL={campaign.isRL === true}
+          rlLockedCats={campaign.isRL === true ? rlLockedCats : undefined}
+          rlCategorySelections={campaign.isRL === true ? rlCategorySelections : undefined}
           onCreateHit={handleCreateHit}
           existingHitsCount={campaignHitsData.length}
+          onDirty={setIsDirty}
+          isMultiBrand={campaign.isMultiBrand === true}
         />
       )}
       {activeTab === 'Scenario planning' && (
-        campaign.id === 0
+        campaign.isRL === true
           ? <CampaignScenarioTabRL
               status={status}
               categorySelections={rlCategorySelections}
-              onSelectionsChange={setRlCategorySelections}
+              onSelectionsChange={sel => { setRlCategorySelections(sel); setIsDirty(true) }}
               lockedCats={rlLockedCats}
               onLockedCatsChange={setRlLockedCats}
               onScenarioSaved={s => setSavedScenario(s)}
             />
-          : <CampaignScenarioTab status={status} onScenarioSaved={s => setSavedScenario(s)} />
+          : <CampaignScenarioTab status={status} onScenarioSaved={s => { setSavedScenario(s); setIsDirty(false) }} />
       )}
       {activeTab === 'Settings' && <CampaignSettingsTab campaign={campaign} />}
 
@@ -334,6 +449,20 @@ export default function CampaignDetail({ campaign, onBack }) {
           onCreateHit={handleCreateHit}
           existingHitsCount={campaignHitsData.length}
         />
+      )}
+      {showSaveModal && (
+        <UnsavedChangesModal
+          targetTab={pendingTab}
+          onSaveAndSwitch={handleSaveAndSwitch}
+          onDiscardAndSwitch={handleDiscardAndSwitch}
+          onCancel={() => { setShowSaveModal(false); setPendingTab(null) }}
+        />
+      )}
+      {saveFlash && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-2xl text-sm font-medium animate-fade-in">
+          <CheckCircle2 size={15} className="text-green-400" />
+          Campaign updates saved
+        </div>
       )}
     </div>
   )

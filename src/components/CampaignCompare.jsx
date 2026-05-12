@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import {
   ArrowLeft, ChevronDown, ChevronUp, Info, Sparkles,
-  AlertTriangle, Calendar,
+  AlertTriangle, Calendar, Target,
 } from 'lucide-react'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -105,12 +105,137 @@ const METRICS = [
   { key: 'discountPct',    label: 'Discount %',        confidence: null },
 ]
 
+const RL_CATEGORY_NAMES = ["Women's Polo", 'Knitwear', 'Oxford Shirts', 'Chinos', 'Outerwear', 'Accessories']
+
+function GuardrailComparison({ c1, c2, compareType }) {
+  const gc1 = c1.guardrailConfig
+  const gc2 = c2.guardrailConfig
+
+  const setColors = {
+    A: { badge: 'bg-blue-50 text-blue-700 border border-blue-200', dot: 'bg-blue-500' },
+    B: { badge: 'bg-amber-50 text-amber-700 border border-amber-200', dot: 'bg-amber-500' },
+  }
+
+  const isOvsC = compareType === 'optimised-vs-completed'
+  const colLabels = isOvsC ? ['Proposed Season', 'Last Season'] : [c1.name, c2.name]
+  const colLabelStyle = isOvsC
+    ? ['text-violet-700 font-semibold', 'text-gray-500']
+    : ['text-gray-700 font-semibold', 'text-gray-700 font-semibold']
+
+  return (
+    <div className="border border-violet-200 rounded-xl overflow-hidden bg-white mb-4">
+      {/* Header */}
+      <div className="flex items-center gap-2.5 px-5 py-3.5 bg-violet-50 border-b border-violet-100">
+        <Target size={14} className="text-violet-600" />
+        <span className="text-sm font-semibold text-violet-900">Guardrail Set Comparison</span>
+        <span className="text-xs text-violet-500 ml-1">Ralph Lauren optimisation constraints</span>
+      </div>
+
+      {/* Constraint summary */}
+      <div className="grid border-b border-gray-100" style={{ gridTemplateColumns: '160px 1fr 1fr' }}>
+        <div className="px-5 py-3 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-end">Constraint</div>
+        {[{ c: c1, gc: gc1 }, { c: c2, gc: gc2 }].map(({ c, gc }, i) => (
+          <div key={i} className="px-5 py-3 border-l border-gray-100">
+            <p className={`text-xs mb-2 ${colLabelStyle[i]}`}>{colLabels[i]}</p>
+            {isOvsC && <p className="text-[10px] text-gray-400 mb-2 -mt-1">{c.name}</p>}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200 flex-shrink-0">Set A</span>
+                <span className="text-xs text-gray-600">{gc.setARule}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200 flex-shrink-0">Set B</span>
+                <span className="text-xs text-gray-600">{gc.setBRule}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Category assignment table */}
+      <div className="grid border-b border-gray-100 bg-gray-50/60" style={{ gridTemplateColumns: '160px 1fr 1fr' }}>
+        <div className="px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Category</div>
+        {[0, 1].map(i => (
+          <div key={i} className="px-5 py-2.5 border-l border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            {isOvsC ? colLabels[i] : 'Guardrail Set'}
+          </div>
+        ))}
+      </div>
+
+      {RL_CATEGORY_NAMES.map(cat => {
+        const a1 = gc1.categoryAssignments[cat]
+        const a2 = gc2.categoryAssignments[cat]
+        const differs = a1 !== a2
+        return (
+          <div key={cat} className={`grid border-b border-gray-50 last:border-0 ${differs ? 'bg-amber-50/30' : ''}`} style={{ gridTemplateColumns: '160px 1fr 1fr' }}>
+            <div className="px-5 py-3 flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-800">{cat}</span>
+              {differs && <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-1 py-0.5 rounded">Differs</span>}
+            </div>
+            {[a1, a2].map((set, i) => (
+              <div key={i} className="px-5 py-3 border-l border-gray-100 flex items-center">
+                {set && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${setColors[set].badge}`}>
+                    Set {set}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+      })}
+
+      {/* Distribution summary */}
+      <div className="grid border-t border-gray-100 bg-gray-50" style={{ gridTemplateColumns: '160px 1fr 1fr' }}>
+        <div className="px-5 py-3 text-xs font-semibold text-gray-500">Distribution</div>
+        {[gc1, gc2].map((gc, i) => {
+          const assignments = Object.values(gc.categoryAssignments)
+          const aCount = assignments.filter(s => s === 'A').length
+          const bCount = assignments.filter(s => s === 'B').length
+          const total = assignments.length
+          return (
+            <div key={i} className="px-5 py-3 border-l border-gray-100 flex items-center gap-3">
+              <div className="flex-1 flex items-center gap-1.5">
+                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden flex">
+                  <div className="bg-blue-400 h-full rounded-l-full" style={{ width: `${(aCount / total) * 100}%` }} />
+                  <div className="bg-amber-400 h-full rounded-r-full" style={{ width: `${(bCount / total) * 100}%` }} />
+                </div>
+              </div>
+              <span className="text-xs text-gray-500 flex-shrink-0">
+                <span className="text-blue-600 font-semibold">{aCount}A</span>
+                {' / '}
+                <span className="text-amber-600 font-semibold">{bCount}B</span>
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function CampaignCompare({ campaigns, onBack }) {
   const [showDataNotes,   setShowDataNotes]   = useState(false)
   const [showHits,        setShowHits]        = useState(true)
   const [viewMode,        setViewMode]        = useState('side-by-side')
 
-  const [c1, c2] = campaigns
+  const [raw1, raw2] = campaigns
+  const bothRL = raw1.isRL && raw2.isRL
+
+  const compareType = (() => {
+    if (!bothRL) return 'standard'
+    const s1 = raw1.status, s2 = raw2.status
+    if ((s1 === 'Optimised' && s2 === 'Completed') || (s1 === 'Completed' && s2 === 'Optimised')) return 'optimised-vs-completed'
+    if (s1 === 'Completed' && s2 === 'Completed') return 'both-completed'
+    if (s1 === 'Optimised' && s2 === 'Optimised') return 'both-optimised'
+    return 'standard'
+  })()
+
+  // For optimised-vs-completed: Optimised → left (Proposed), Completed → right (Last Season)
+  const [c1, c2] = compareType === 'optimised-vs-completed' && raw1.status === 'Completed'
+    ? [raw2, raw1]
+    : [raw1, raw2]
+
   const d1 = useMemo(() => buildData(c1, 0), [c1])
   const d2 = useMemo(() => buildData(c2, 1), [c2])
 
@@ -213,6 +338,26 @@ export default function CampaignCompare({ campaigns, onBack }) {
         </button>
       </div>
 
+      {/* ── Context framing banner (RL only) ──────────────────────────── */}
+      {bothRL && compareType === 'optimised-vs-completed' && (
+        <div className="flex items-start gap-3 bg-violet-50 border border-violet-200 rounded-xl px-4 py-3 mb-3">
+          <Sparkles size={15} className="text-violet-500 mt-0.5 shrink-0" />
+          <p className="text-sm text-violet-800">
+            <strong>Pre-launch validation</strong> — comparing the proposed{' '}
+            <strong>{c1.name}</strong> guardrail configuration against{' '}
+            <strong>{c2.name}</strong> outcomes. Use last season's results to pressure-test the new strategy before going live.
+          </p>
+        </div>
+      )}
+      {bothRL && compareType === 'both-completed' && (
+        <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-3">
+          <Info size={15} className="text-blue-500 mt-0.5 shrink-0" />
+          <p className="text-sm text-blue-800">
+            <strong>Season comparison</strong> — both Ralph Lauren campaigns are completed. Review how different guardrail configurations affected sell-through and gross margin outcomes.
+          </p>
+        </div>
+      )}
+
       {/* ── AI Insight ─────────────────────────────────────────────────── */}
       <div className="flex items-start gap-3 border border-gray-200 rounded-xl px-4 py-3.5 mb-6 bg-white">
         <div className="w-8 h-8 rounded-full bg-[#2a44d4] flex items-center justify-center shrink-0">
@@ -221,13 +366,33 @@ export default function CampaignCompare({ campaigns, onBack }) {
         <div>
           <p className="text-sm font-semibold text-gray-900 mb-0.5">AI Insight</p>
           <p className="text-sm text-gray-600 leading-relaxed">
-            {c1.name} drove higher revenue vs {c2.name}, primarily from deeper markdown phases
-            {d1.type === 'Markdown Campaign' ? ` (up to ${d1.avgDiscount})` : ''}, which contributed{' '}
-            {d1.hits.length > 0 ? `${d1.topPct} of total revenue` : 'significant volume'}. However,
-            margin was lower compared to {c2.name}.
+            {bothRL && compareType === 'optimised-vs-completed' ? (() => {
+              const gc1 = c1.guardrailConfig, gc2 = c2.guardrailConfig
+              const changes = RL_CATEGORY_NAMES.map(cat => ({
+                cat,
+                proposed: gc1.categoryAssignments[cat],
+                last: gc2.categoryAssignments[cat],
+              })).filter(c => c.proposed !== c.last)
+              const toSetA = changes.filter(c => c.proposed === 'A').map(c => c.cat)
+              const toSetB = changes.filter(c => c.proposed === 'B').map(c => c.cat)
+              const parts = []
+              if (toSetA.length > 0) parts.push(`${toSetA.join(' and ')} ${toSetA.length > 1 ? 'shift' : 'shifts'} to Set A (less aggressive constraint) — protecting gross margin on ${toSetA.length > 1 ? 'these categories' : 'this category'} vs last season`)
+              if (toSetB.length > 0) parts.push(`${toSetB.join(' and ')} ${toSetB.length > 1 ? 'move' : 'moves'} to Set B, signalling higher clearance urgency this season`)
+              const baseline = c2.sellThrough ? ` ${c2.name} delivered ${c2.sellThrough} sell-through — use this as your baseline when reviewing the proposed strategy.` : ''
+              return parts.length > 0
+                ? `${parts.join('; ')}.${baseline}`
+                : `Category assignments are unchanged from last season. Review whether the same guardrail constraints remain appropriate for the new product mix.${baseline}`
+            })()
+            : bothRL && compareType === 'both-completed'
+            ? `${c1.name} used ${c1.guardrailConfig.setARule} (Set A) and ${c1.guardrailConfig.setBRule} (Set B), while ${c2.name} ran ${c2.guardrailConfig.setARule} and ${c2.guardrailConfig.setBRule}. Categories assigned to the more aggressive Set B constraint drove higher sell-through but reduced gross margin — review these trade-offs when configuring the next season.`
+            : `${c1.name} drove higher revenue vs ${c2.name}, primarily from deeper markdown phases${d1.type === 'Markdown Campaign' ? ` (up to ${d1.avgDiscount})` : ''}, which contributed ${d1.hits.length > 0 ? `${d1.topPct} of total revenue` : 'significant volume'}. However, margin was lower compared to ${c2.name}.`
+            }
           </p>
         </div>
       </div>
+
+      {/* ── Guardrail comparison (RL campaigns only) ───────────────────── */}
+      {bothRL && <GuardrailComparison c1={c1} c2={c2} compareType={compareType} />}
 
       {/* ── View toggle ────────────────────────────────────────────────── */}
       <div className="flex justify-end mb-3">
@@ -258,9 +423,21 @@ export default function CampaignCompare({ campaigns, onBack }) {
           </div>
           {[d1, d2].map((d, i) => (
             <div key={i} className="px-5 py-4 border-l border-gray-200 bg-gray-50">
+              {bothRL && compareType === 'optimised-vs-completed' && (
+                <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded border mb-2 ${
+                  i === 0
+                    ? 'bg-violet-100 text-violet-700 border-violet-200'
+                    : 'bg-gray-100 text-gray-600 border-gray-200'
+                }`}>
+                  {i === 0 ? 'Proposed Season' : 'Last Season'}
+                </span>
+              )}
               <p className="font-bold text-sm text-gray-900">{d.name}</p>
               <p className="text-xs text-gray-400 mt-0.5">{d.dates}</p>
               <p className="text-xs text-gray-500 mt-0.5">{d.type}</p>
+              {bothRL && compareType === 'optimised-vs-completed' && i === 0 && (
+                <p className="text-xs text-violet-500 mt-0.5 italic">No actuals yet — campaign not live</p>
+              )}
               <div className="mt-3 space-y-1 text-xs text-gray-700">
                 <p><span className="font-semibold">Avg discount:</span> {d.avgDiscount}</p>
                 <p><span className="font-semibold">Range:</span> {d.discountRange}</p>

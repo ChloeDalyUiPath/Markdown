@@ -1003,61 +1003,16 @@ function RiskSignals({ stats }) {
 // ─── Preferences panel (right sidebar) ───────────────────────────────────────
 
 function PreferencesPanel({
-  scenarioType, onScenarioTypeChange,
   selectedCategories, onCategoriesChange,
   categoryLocked, onLockCategories, onUnlockCategories,
   viewGrossMargin, onViewGrossMarginChange,
   compareMode, onCompareModeChange,
   flatDiscounts, onFlatDiscountsChange,
 }) {
-  const [open, setOpen] = useState(false)
-  const dropdownRef = useRef(null)
-  const isGuardrails = scenarioType === 'guardrails'
-
-  useEffect(() => {
-    if (!open) return
-    function handleClick(e) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [open])
-
-  const currentLabel = SCENARIO_TYPES.find(t => t.value === scenarioType)?.label ?? ''
-
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4">
       <h3 className="text-sm font-semibold text-gray-900 mb-1">Strategy Preferences</h3>
       <p className="text-[11px] text-gray-400 mb-4">Filters apply to the table and chart.</p>
-
-      {/* Strategy Type */}
-      <div className="mb-3" ref={dropdownRef}>
-        <div className="text-xs font-medium text-gray-600 mb-1.5">Strategy Type</div>
-        <div className="relative">
-          <button
-            onClick={() => setOpen(v => !v)}
-            className="w-full flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            <span className="flex-1 text-left truncate">{currentLabel}</span>
-            <ChevronDown size={14} className="text-gray-400 flex-shrink-0" />
-          </button>
-          {open && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
-              {SCENARIO_TYPES.map(t => (
-                <button
-                  key={t.value}
-                  onClick={() => { onScenarioTypeChange(t.value); setOpen(false) }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between
-                    ${t.value === scenarioType ? 'text-[#2a44d4] font-medium' : 'text-gray-700'}`}
-                >
-                  {t.label}
-                  {t.value === scenarioType && <Check size={13} className="text-[#2a44d4]" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Category filter */}
       <div className="mb-4">
@@ -1074,16 +1029,12 @@ function PreferencesPanel({
       {/* Toggles */}
       <div className="flex flex-col gap-3 pt-3 border-t border-gray-100">
         <Toggle label="View gross margin ($)" value={viewGrossMargin} onChange={onViewGrossMarginChange} />
-        {!isGuardrails && (
-          <>
-            <Toggle
-              label={<span className="flex items-center gap-1"><ArrowRightLeft size={11} /> Compare scenarios</span>}
-              value={compareMode}
-              onChange={onCompareModeChange}
-            />
-            <Toggle label="Include flat discounts" value={flatDiscounts} onChange={onFlatDiscountsChange} />
-          </>
-        )}
+        <Toggle
+          label={<span className="flex items-center gap-1"><ArrowRightLeft size={11} /> Compare scenarios</span>}
+          value={compareMode}
+          onChange={onCompareModeChange}
+        />
+        <Toggle label="Include flat discounts" value={flatDiscounts} onChange={onFlatDiscountsChange} />
       </div>
     </div>
   )
@@ -1121,7 +1072,7 @@ export default function CampaignScenarioTab({ onScenarioSaved }) {
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [saveToast, setSaveToast]     = useState(null)
 
-  const isGuardrails  = scenarioType === 'guardrails'
+  const isGuardrails = false
   const displayPoints = flatDiscounts ? allPoints : allPoints.filter(p => p.type !== 'flat')
   const primaryPoint  = allPoints.find(p => p.id === selectedIds[0]) || null
 
@@ -1129,9 +1080,7 @@ export default function CampaignScenarioTab({ onScenarioSaved }) {
     ? guardrailCategories
     : guardrailCategories.filter(c => selectedCategories.includes(c.id))
 
-  const kpiStats = isGuardrails
-    ? computeGuardrailStats(selectedGuardrails, activeCats)
-    : computeScenarioStats(primaryPoint || allPoints.find(p => p.id === 6))
+  const kpiStats = computeScenarioStats(primaryPoint || allPoints.find(p => p.id === 6))
 
   function handlePointClick(p) {
     if (compareMode) {
@@ -1189,45 +1138,8 @@ export default function CampaignScenarioTab({ onScenarioSaved }) {
 
       <div className="grid gap-4" style={{ gridTemplateColumns: '1fr 300px' }}>
 
-        {/* ── Guardrails view ───────────────────────────────────────────────── */}
-        {isGuardrails && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">Choose a Strategy per Category</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Mix and match guardrail sets to optimise the full assortment.</p>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors">
-                  <Plus size={13} /> Create Custom
-                </button>
-                <button
-                  onClick={() => setShowSaveModal(true)}
-                  className="flex items-center gap-1.5 bg-[#2a44d4] hover:bg-[#2438b8] text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-colors"
-                >
-                  <Save size={12} /> Save strategy
-                </button>
-              </div>
-            </div>
-            {categoryLocked && selectedCategories.length > 0 && (
-              <LockedBanner selectedCategories={selectedCategories} onUnlock={handleUnlockCategories} />
-            )}
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              {guardrailSets.map(set => <GuardrailCard key={set.id} set={set} />)}
-            </div>
-            <GuardrailTable
-              categories={activeCats}
-              totalCategories={guardrailCategories.length}
-              selectedGuardrails={selectedGuardrails}
-              onSelect={handleGuardrailSelect}
-              lastChange={lastChange}
-            />
-          </div>
-        )}
-
         {/* ── Scatter chart view ────────────────────────────────────────────── */}
-        {!isGuardrails && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col">
+        <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col">
             <div className="flex items-start justify-between mb-2">
               <div>
                 <h3 className="text-sm font-semibold text-gray-900">Sell-Through Rate vs Gross Margin</h3>
@@ -1293,13 +1205,10 @@ export default function CampaignScenarioTab({ onScenarioSaved }) {
               />
             </div>
           </div>
-        )}
 
         {/* ── Right sidebar ─────────────────────────────────────────────────── */}
         <div className="flex flex-col gap-3">
           <PreferencesPanel
-            scenarioType={scenarioType}
-            onScenarioTypeChange={setScenarioType}
             selectedCategories={selectedCategories}
             onCategoriesChange={v => { if (!categoryLocked) setSelectedCategories(v) }}
             categoryLocked={categoryLocked}

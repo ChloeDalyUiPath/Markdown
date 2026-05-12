@@ -3,9 +3,9 @@ import {
   Search, SlidersHorizontal, Columns2, ChevronDown, ChevronUp,
   TrendingUp, TrendingDown, ChevronLeft, ChevronRight,
   ChevronsLeft, ChevronsRight, Edit2, Settings, ShieldAlert,
-  AlertTriangle, CheckCircle2, LayoutGrid, Check, Lock, X, Plus,
+  AlertTriangle, CheckCircle2, LayoutGrid, Check, Lock, X, Plus, Tag,
 } from 'lucide-react'
-import { RL_CATEGORIES } from '../../data/rlStrategies'
+import { RL_CATEGORIES, SET_A_CURVE, SET_B_CURVE } from '../../data/rlStrategies'
 import CreateHitModal from '../CreateHitModal'
 
 // ─── Mock data ──────────────────────────────────────────────────────────────
@@ -71,6 +71,7 @@ const categoryData = [
 
 const products = Array.from({ length: 8 }, (_, i) => ({
   id: i + 1, name: 'Product', productId: '#ID',
+  brand: ['Stone Island', 'Nike', 'New Balance', 'Carhartt', 'adidas', 'Stone Island', 'Nike', 'New Balance'][i],
   category: ['Coats & Jackets', 'Knitwear', 'Dresses', 'Tops & Blouses'][i % 4],
   season: 'AW 2024', status: i % 2 === 0 ? 'Optimised' : 'Original', country: 'UK',
   sales: [123, 98, 211, 67, 145, 88, 192, 54][i], salesChange: i % 3 === 0 ? '-2.4%' : '+2.4%',
@@ -97,14 +98,14 @@ const RL_CAT_DATA = [
 ]
 
 const RL_PRODUCTS = [
-  { id: 1, name: 'Polo Shirt Classic',  productId: '#RL-001', category: "Women's Polo",  season: 'SS 2026', status: 'Optimised', country: 'UK', sales: 312, salesChange: '+4.2%', revenue: '£28.4K', revenueChange: '+3.8%', margin: '58.2%', marginChange: '+1.4%', stock: 1.6, stockChange: '-0.2%', predStock: 280,  predStockChange: '-8.5%',  predDemand: '96K',  predDemandChange: '+2.4%', predMargin: '12%', predMarginChange: '+1.2%', predRevenue: '£14.2K', predRevenueChange: '+3.1%' },
-  { id: 2, name: 'Cable Knit Sweater',  productId: '#RL-002', category: 'Knitwear',      season: 'SS 2026', status: 'Original',  country: 'UK', sales: 198, salesChange: '-3.1%', revenue: '£18.6K', revenueChange: '-2.8%', margin: '47.4%', marginChange: '-2.1%', stock: 3.2, stockChange: '+0.8%', predStock: 510,  predStockChange: '+14.2%', predDemand: '74K',  predDemandChange: '-1.4%', predMargin: '8%',  predMarginChange: '-2.4%', predRevenue: '£8.1K',  predRevenueChange: '-3.2%' },
-  { id: 3, name: 'Oxford Pinpoint',     productId: '#RL-003', category: 'Oxford Shirts', season: 'SS 2026', status: 'Optimised', country: 'UK', sales: 245, salesChange: '+1.8%', revenue: '£21.2K', revenueChange: '+1.4%', margin: '53.6%', marginChange: '+0.6%', stock: 2.0, stockChange: '-0.4%', predStock: 380,  predStockChange: '-8.1%',  predDemand: '88K',  predDemandChange: '+1.6%', predMargin: '11%', predMarginChange: '+0.8%', predRevenue: '£11.4K', predRevenueChange: '+2.2%' },
-  { id: 4, name: 'Slim Chino Trouser',  productId: '#RL-004', category: 'Chinos',        season: 'SS 2026', status: 'Original',  country: 'UK', sales: 167, salesChange: '-4.8%', revenue: '£14.8K', revenueChange: '-5.2%', margin: '43.8%', marginChange: '-3.6%', stock: 3.8, stockChange: '+1.2%', predStock: 620,  predStockChange: '+22.1%', predDemand: '58K',  predDemandChange: '-3.8%', predMargin: '7%',  predMarginChange: '-3.2%', predRevenue: '£6.8K',  predRevenueChange: '-4.8%' },
-  { id: 5, name: 'Quilted Field Jacket',productId: '#RL-005', category: 'Outerwear',     season: 'SS 2026', status: 'Optimised', country: 'UK', sales: 142, salesChange: '-8.2%', revenue: '£28.6K', revenueChange: '-9.1%', margin: '36.4%', marginChange: '-6.2%', stock: 4.9, stockChange: '+2.1%', predStock: 820,  predStockChange: '+38.4%', predDemand: '46K',  predDemandChange: '-8.4%', predMargin: '6%',  predMarginChange: '-5.8%', predRevenue: '£8.4K',  predRevenueChange: '-8.6%' },
-  { id: 6, name: 'Canvas Belt',         productId: '#RL-006', category: 'Accessories',   season: 'SS 2026', status: 'Optimised', country: 'UK', sales: 428, salesChange: '+6.4%', revenue: '£12.8K', revenueChange: '+5.8%', margin: '65.2%', marginChange: '+2.4%', stock: 1.3, stockChange: '-0.6%', predStock: 180,  predStockChange: '-12.4%', predDemand: '148K', predDemandChange: '+4.8%', predMargin: '14%', predMarginChange: '+2.1%', predRevenue: '£7.2K',  predRevenueChange: '+4.4%' },
-  { id: 7, name: 'Polo Shirt Slim Fit', productId: '#RL-007', category: "Women's Polo",  season: 'SS 2026', status: 'Optimised', country: 'UK', sales: 284, salesChange: '+3.6%', revenue: '£24.2K', revenueChange: '+3.1%', margin: '56.8%', marginChange: '+1.2%', stock: 1.8, stockChange: '-0.3%', predStock: 310,  predStockChange: '-6.2%',  predDemand: '102K', predDemandChange: '+2.8%', predMargin: '12%', predMarginChange: '+1.4%', predRevenue: '£12.8K', predRevenueChange: '+2.8%' },
-  { id: 8, name: 'Merino Crewneck',     productId: '#RL-008', category: 'Knitwear',      season: 'SS 2026', status: 'Original',  country: 'UK', sales: 176, salesChange: '-2.4%', revenue: '£16.4K', revenueChange: '-2.1%', margin: '46.8%', marginChange: '-1.8%', stock: 2.8, stockChange: '+0.6%', predStock: 460,  predStockChange: '+9.8%',  predDemand: '68K',  predDemandChange: '-1.8%', predMargin: '8%',  predMarginChange: '-1.6%', predRevenue: '£7.6K',  predRevenueChange: '-2.4%' },
+  { id: 1, name: 'Polo Shirt Classic',  productId: '#RL-001', category: "Women's Polo",  season: 'SS 2026', status: 'Optimised', country: 'UK', price: 89.00,  sales: 312, salesChange: '+4.2%', revenue: '£28.4K', revenueChange: '+3.8%', margin: '58.2%', marginChange: '+1.4%', stock: 1.6, stockChange: '-0.2%', predStock: 280,  predStockChange: '-8.5%',  predDemand: '96K',  predDemandChange: '+2.4%', predMargin: '12%', predMarginChange: '+1.2%', predRevenue: '£14.2K', predRevenueChange: '+3.1%' },
+  { id: 2, name: 'Cable Knit Sweater',  productId: '#RL-002', category: 'Knitwear',      season: 'SS 2026', status: 'Original',  country: 'UK', price: 145.00, sales: 198, salesChange: '-3.1%', revenue: '£18.6K', revenueChange: '-2.8%', margin: '47.4%', marginChange: '-2.1%', stock: 3.2, stockChange: '+0.8%', predStock: 510,  predStockChange: '+14.2%', predDemand: '74K',  predDemandChange: '-1.4%', predMargin: '8%',  predMarginChange: '-2.4%', predRevenue: '£8.1K',  predRevenueChange: '-3.2%' },
+  { id: 3, name: 'Oxford Pinpoint',     productId: '#RL-003', category: 'Oxford Shirts', season: 'SS 2026', status: 'Optimised', country: 'UK', price: 110.00, sales: 245, salesChange: '+1.8%', revenue: '£21.2K', revenueChange: '+1.4%', margin: '53.6%', marginChange: '+0.6%', stock: 2.0, stockChange: '-0.4%', predStock: 380,  predStockChange: '-8.1%',  predDemand: '88K',  predDemandChange: '+1.6%', predMargin: '11%', predMarginChange: '+0.8%', predRevenue: '£11.4K', predRevenueChange: '+2.2%' },
+  { id: 4, name: 'Slim Chino Trouser',  productId: '#RL-004', category: 'Chinos',        season: 'SS 2026', status: 'Original',  country: 'UK', price: 98.00,  sales: 167, salesChange: '-4.8%', revenue: '£14.8K', revenueChange: '-5.2%', margin: '43.8%', marginChange: '-3.6%', stock: 3.8, stockChange: '+1.2%', predStock: 620,  predStockChange: '+22.1%', predDemand: '58K',  predDemandChange: '-3.8%', predMargin: '7%',  predMarginChange: '-3.2%', predRevenue: '£6.8K',  predRevenueChange: '-4.8%' },
+  { id: 5, name: 'Quilted Field Jacket',productId: '#RL-005', category: 'Outerwear',     season: 'SS 2026', status: 'Optimised', country: 'UK', price: 320.00, sales: 142, salesChange: '-8.2%', revenue: '£28.6K', revenueChange: '-9.1%', margin: '36.4%', marginChange: '-6.2%', stock: 4.9, stockChange: '+2.1%', predStock: 820,  predStockChange: '+38.4%', predDemand: '46K',  predDemandChange: '-8.4%', predMargin: '6%',  predMarginChange: '-5.8%', predRevenue: '£8.4K',  predRevenueChange: '-8.6%' },
+  { id: 6, name: 'Canvas Belt',         productId: '#RL-006', category: 'Accessories',   season: 'SS 2026', status: 'Optimised', country: 'UK', price: 45.00,  sales: 428, salesChange: '+6.4%', revenue: '£12.8K', revenueChange: '+5.8%', margin: '65.2%', marginChange: '+2.4%', stock: 1.3, stockChange: '-0.6%', predStock: 180,  predStockChange: '-12.4%', predDemand: '148K', predDemandChange: '+4.8%', predMargin: '14%', predMarginChange: '+2.1%', predRevenue: '£7.2K',  predRevenueChange: '+4.4%' },
+  { id: 7, name: 'Polo Shirt Slim Fit', productId: '#RL-007', category: "Women's Polo",  season: 'SS 2026', status: 'Optimised', country: 'UK', price: 89.00,  sales: 284, salesChange: '+3.6%', revenue: '£24.2K', revenueChange: '+3.1%', margin: '56.8%', marginChange: '+1.2%', stock: 1.8, stockChange: '-0.3%', predStock: 310,  predStockChange: '-6.2%',  predDemand: '102K', predDemandChange: '+2.8%', predMargin: '12%', predMarginChange: '+1.4%', predRevenue: '£12.8K', predRevenueChange: '+2.8%' },
+  { id: 8, name: 'Merino Crewneck',     productId: '#RL-008', category: 'Knitwear',      season: 'SS 2026', status: 'Original',  country: 'UK', price: 165.00, sales: 176, salesChange: '-2.4%', revenue: '£16.4K', revenueChange: '-2.1%', margin: '46.8%', marginChange: '-1.8%', stock: 2.8, stockChange: '+0.6%', predStock: 460,  predStockChange: '+9.8%',  predDemand: '68K',  predDemandChange: '-1.8%', predMargin: '8%',  predMarginChange: '-1.6%', predRevenue: '£7.6K',  predRevenueChange: '-2.4%' },
 ]
 
 // ─── Column definitions ───────────────────────────────────────────────────────
@@ -133,6 +134,33 @@ const PROD_COLS = [
   { key: 'predMargin',  label: 'Pred. Margin' },
   { key: 'predRevenue', label: 'Pred. Revenue' },
 ]
+
+// ─── END multi-brand data ─────────────────────────────────────────────────────
+
+const END_BRAND_DATA = [
+  { id: 1, name: 'Nike',         skus: 50, sellThrough: '74%', revenue: '£72.4K', margin: '38%', stockAtCost: '£180K', stockCover: 2.1, stockQuality: 'full',       performance: 'on-track' },
+  { id: 2, name: 'Stone Island', skus: 24, sellThrough: '48%', revenue: '£58.2K', margin: '29%', stockAtCost: '£310K', stockCover: 5.8, stockQuality: 'limited',    performance: 'underperforming' },
+  { id: 3, name: 'New Balance',  skus: 32, sellThrough: '66%', revenue: '£34.1K', margin: '34%', stockAtCost: '£118K', stockCover: 3.2, stockQuality: 'good',       performance: 'at-risk' },
+  { id: 4, name: 'adidas',       skus: 44, sellThrough: '72%', revenue: '£12.8K', margin: '37%', stockAtCost: '£64K',  stockCover: 2.4, stockQuality: 'full',       performance: 'on-track' },
+  { id: 5, name: 'Carhartt',     skus: 16, sellThrough: '38%', revenue: '£8.7K',  margin: '24%', stockAtCost: '£168K', stockCover: 6.4, stockQuality: 'fragmented', performance: 'underperforming' },
+]
+
+const BRAND_COLS = [
+  { key: 'skus',         label: 'SKUs' },
+  { key: 'sellThrough',  label: 'Sell-Through' },
+  { key: 'revenue',      label: 'Revenue' },
+  { key: 'margin',       label: 'Avg Margin' },
+  { key: 'stockAtCost',  label: 'Stock at Cost' },
+  { key: 'stockCover',   label: 'Stock Cover' },
+  { key: 'stockQuality', label: 'Stock Quality' },
+]
+
+const STOCK_QUALITY_CONFIG = {
+  full:       { label: 'Full range',  bg: 'bg-green-50 border-green-100', text: 'text-green-700', dot: 'bg-green-400' },
+  good:       { label: 'Good avail.', bg: 'bg-green-50 border-green-100', text: 'text-green-700', dot: 'bg-green-400' },
+  limited:    { label: 'Limited',     bg: 'bg-amber-50 border-amber-100', text: 'text-amber-700', dot: 'bg-amber-400' },
+  fragmented: { label: 'Fragmented',  bg: 'bg-red-50 border-red-100',     text: 'text-red-700',   dot: 'bg-red-400' },
+}
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -212,8 +240,9 @@ function isLockedCategory(catName, lockedNames) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function CampaignProductsTab({ status, initialFilter, savedScenario, onClearSavedScenario, isRL, rlLockedCats, onCreateHit, existingHitsCount = 3 }) {
+export default function CampaignProductsTab({ status, initialFilter, savedScenario, onClearSavedScenario, isRL, rlLockedCats, rlCategorySelections, onCreateHit, existingHitsCount = 3, onDirty, isMultiBrand = false }) {
   const isLive = status === 'Live'
+  const isPreLive = !isLive && status !== 'Completed'
   const [view, setView] = useState('Product Level')
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
@@ -221,9 +250,12 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
   const [selectedCatIds, setSelectedCatIds] = useState(new Set())
   const [selectedProductIds, setSelectedProductIds] = useState(new Set())
   const [showHitModal, setShowHitModal] = useState(false)
+  const [editedPrices, setEditedPrices] = useState({})
+  const [editedMarkdowns, setEditedMarkdowns] = useState({})
 
   const [visibleCatCols, setVisibleCatCols] = useState(new Set(CAT_COLS.map(c => c.key)))
   const [visibleProdCols, setVisibleProdCols] = useState(new Set(PROD_COLS.map(c => c.key)))
+  const [visibleBrandCols, setVisibleBrandCols] = useState(new Set(BRAND_COLS.map(c => c.key)))
   const [showColPanel, setShowColPanel] = useState(false)
   const colPanelRef = useRef(null)
 
@@ -242,9 +274,9 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
     return () => document.removeEventListener('mousedown', handler)
   }, [showColPanel])
 
-  const currentCols = view === 'Category Level' ? CAT_COLS : PROD_COLS
-  const currentVisible = view === 'Category Level' ? visibleCatCols : visibleProdCols
-  const setCurrentVisible = view === 'Category Level' ? setVisibleCatCols : setVisibleProdCols
+  const currentCols = view === 'Category Level' ? CAT_COLS : view === 'Brand Level' ? BRAND_COLS : PROD_COLS
+  const currentVisible = view === 'Category Level' ? visibleCatCols : view === 'Brand Level' ? visibleBrandCols : visibleProdCols
+  const setCurrentVisible = view === 'Category Level' ? setVisibleCatCols : view === 'Brand Level' ? setVisibleBrandCols : setVisibleProdCols
 
   function toggleCol(key) {
     setCurrentVisible(prev => {
@@ -309,14 +341,14 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {['Product Level', 'Category Level'].map(v => (
+            {['Product Level', 'Category Level', ...(isMultiBrand ? ['Brand Level'] : [])].map(v => (
               <button
                 key={v}
                 onClick={() => { setView(v); setShowColPanel(false) }}
                 className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg border transition-colors
                   ${view === v ? 'border-[#2a44d4] text-[#2a44d4] bg-white' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
               >
-                {v === 'Product Level' ? <Edit2 size={12} /> : <LayoutGrid size={12} />}
+                {v === 'Product Level' ? <Edit2 size={12} /> : v === 'Brand Level' ? <Tag size={12} /> : <LayoutGrid size={12} />}
                 {v}
               </button>
             ))}
@@ -350,7 +382,7 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
             <div className="absolute top-full left-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-20 w-52 overflow-hidden">
               <div className="px-3 py-2.5 border-b border-gray-100">
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  {view === 'Category Level' ? 'Category columns' : 'Product columns'}
+                  {view === 'Category Level' ? 'Category columns' : view === 'Brand Level' ? 'Brand columns' : 'Product columns'}
                 </span>
               </div>
               {currentCols.map(c => (
@@ -428,7 +460,7 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
                   {isLive && (
                     <th className="text-center px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Performance</th>
                   )}
-                  {col('guardrails') && <th className="text-center px-3 py-3 text-xs font-semibold text-gray-500">Guardrails</th>}
+                  {col('guardrails') && <th className="text-center px-3 py-3 text-xs font-semibold text-gray-500">{isRL ? 'Guardrail Set' : 'Guardrails'}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -463,7 +495,23 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
                         <div className="text-xs text-gray-400">{cat.optimised.toLocaleString()} optimised</div>
                       </td>
                     )}
-                    {col('markdown') && <td className="px-3 py-3 text-right"><span className="text-sm font-semibold text-gray-900">{cat.avgMarkdown}</span></td>}
+                    {col('markdown') && (
+                      <td className="px-3 py-3 text-right">
+                        {isPreLive ? (
+                          <input
+                            type="text"
+                            defaultValue={editedMarkdowns[cat.rlCatId ?? cat.id] ?? cat.avgMarkdown}
+                            className="w-16 text-sm font-semibold text-right border border-gray-200 rounded-lg px-2 py-0.5 focus:outline-none focus:border-[#2a44d4] bg-white"
+                            onChange={e => {
+                              setEditedMarkdowns(prev => ({ ...prev, [cat.rlCatId ?? cat.id]: e.target.value }))
+                              onDirty?.(true)
+                            }}
+                          />
+                        ) : (
+                          <span className="text-sm font-semibold text-gray-900">{cat.avgMarkdown}</span>
+                        )}
+                      </td>
+                    )}
                     {col('sellThru') && (
                       <td className="px-3 py-3 text-right">
                         <div className="text-sm font-semibold text-gray-900">{cat.sellThrough}</div>
@@ -489,7 +537,26 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
                     )}
                     {col('guardrails') && (
                       <td className="px-3 py-3 text-center">
-                        {cat.guardrails ? <GuardrailBadge note={cat.guardrailNote} /> : <span className="text-xs text-gray-300">—</span>}
+                        {isRL && rlCategorySelections ? (() => {
+                          const rlCat = RL_CATEGORIES.find(c => c.name === cat.name)
+                          const sel = rlCat ? rlCategorySelections[rlCat.id] : null
+                          if (!sel) return <span className="text-xs text-gray-300">—</span>
+                          const isSetA = sel.guardrailSetId === 1
+                          const curve = isSetA ? SET_A_CURVE : SET_B_CURVE
+                          const point = curve.find(p => p.id === sel.pointId)
+                          return (
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded border ${
+                                isSetA ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                              }`}>
+                                Set {isSetA ? 'A' : 'B'}
+                              </span>
+                              {point && <span className="text-[10px] text-gray-400">{point.pct}% mkdn</span>}
+                            </div>
+                          )
+                        })() : (
+                          cat.guardrails ? <GuardrailBadge note={cat.guardrailNote} /> : <span className="text-xs text-gray-300">—</span>
+                        )}
                       </td>
                     )}
                   </tr>
@@ -516,9 +583,12 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
                     <div className="text-xs font-semibold text-gray-700">Product Name</div>
                     <div className="text-xs font-normal text-gray-400">Product ID</div>
                   </th>
+                  {isMultiBrand && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Brand</th>}
                   {col('category') && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Category</th>}
                   {col('season') && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Season</th>}
                   {col('status') && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Status</th>}
+                  {isRL && <th className="text-center px-3 py-3 text-xs font-semibold text-gray-500">Guardrail Set</th>}
+                  {isPreLive && <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Price (£)</th>}
                   <th className="px-2 py-3" />
                   {col('country') && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-500">Country</th>}
                   {col('sales') && <th className="text-right px-3 py-3"><div className="text-xs font-semibold text-gray-500">Sales</div><div className="text-xs font-normal text-gray-400">vs LY</div></th>}
@@ -546,9 +616,45 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
                       </td>
                     )}
                     <td className="px-4 py-3"><div className="font-semibold text-gray-900">{p.name}</div><div className="text-xs text-gray-400">{p.productId}</div></td>
+                    {isMultiBrand && <td className="px-3 py-3 text-xs font-medium text-gray-700">{p.brand}</td>}
                     {col('category') && <td className="px-3 py-3 text-xs text-gray-600">{p.category}</td>}
                     {col('season') && <td className="px-3 py-3 text-xs text-gray-600">{p.season}</td>}
                     {col('status') && <td className="px-3 py-3"><ProductStatusBadge status={p.status} /></td>}
+                    {isRL && (
+                      <td className="px-3 py-3 text-center">
+                        {(() => {
+                          const rlCat = RL_CATEGORIES.find(c => c.name === p.category)
+                          const sel = rlCat && rlCategorySelections ? rlCategorySelections[rlCat.id] : null
+                          if (!sel) return <span className="text-xs text-gray-300">—</span>
+                          const isSetA = sel.guardrailSetId === 1
+                          return (
+                            <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded border ${
+                              isSetA ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}>
+                              Set {isSetA ? 'A' : 'B'}
+                            </span>
+                          )
+                        })()}
+                      </td>
+                    )}
+                    {isPreLive && (
+                      <td className="px-3 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <span className="text-xs text-gray-400">£</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            defaultValue={editedPrices[p.id] ?? p.price ?? ''}
+                            placeholder="—"
+                            className="w-20 text-sm font-semibold text-right border border-gray-200 rounded-lg px-2 py-0.5 focus:outline-none focus:border-[#2a44d4] bg-white"
+                            onChange={e => {
+                              setEditedPrices(prev => ({ ...prev, [p.id]: e.target.value }))
+                              onDirty?.(true)
+                            }}
+                          />
+                        </div>
+                      </td>
+                    )}
                     <td className="px-2 py-3">
                       <div className="flex gap-1">
                         <button className="w-6 h-6 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50 text-gray-400"><Edit2 size={10} /></button>
@@ -591,6 +697,80 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
                 Show <button className="flex items-center gap-1 border border-gray-200 rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">25 <ChevronDown size={9} /></button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── BRAND VIEW ────────────────────────────────────────── */}
+      {view === 'Brand Level' && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 min-w-[160px]">Brand</th>
+                  {col('skus') && <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500">SKUs</th>}
+                  {col('sellThrough') && (
+                    <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">
+                      Sell-Through<br /><span className="font-normal text-gray-400">72% target</span>
+                    </th>
+                  )}
+                  {col('revenue') && <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500">Revenue</th>}
+                  {col('margin') && <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500">Avg Margin</th>}
+                  {col('stockAtCost') && <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Stock at Cost</th>}
+                  {col('stockCover') && (
+                    <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">
+                      Stock Cover<br /><span className="font-normal text-gray-400">weeks</span>
+                    </th>
+                  )}
+                  {col('stockQuality') && <th className="text-center px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Stock Quality</th>}
+                  <th className="text-center px-3 py-3 text-xs font-semibold text-gray-500">Performance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {END_BRAND_DATA.map((b, i) => {
+                  const sq = STOCK_QUALITY_CONFIG[b.stockQuality]
+                  const stNum = parseInt(b.sellThrough)
+                  return (
+                    <tr key={b.id} className={`${i < END_BRAND_DATA.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50 transition-colors`}>
+                      <td className="px-4 py-3">
+                        <span className="font-semibold text-gray-900">{b.name}</span>
+                      </td>
+                      {col('skus') && <td className="px-3 py-3 text-right text-sm text-gray-900">{b.skus}</td>}
+                      {col('sellThrough') && (
+                        <td className="px-3 py-3 text-right">
+                          <div className={`text-sm font-semibold ${stNum >= 72 ? 'text-green-700' : stNum >= 55 ? 'text-amber-700' : 'text-red-600'}`}>{b.sellThrough}</div>
+                          <div className="w-20 ml-auto mt-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                            <div className={`h-full rounded-full ${stNum >= 72 ? 'bg-green-400' : stNum >= 55 ? 'bg-amber-400' : 'bg-red-400'}`} style={{ width: b.sellThrough }} />
+                          </div>
+                        </td>
+                      )}
+                      {col('revenue') && <td className="px-3 py-3 text-right"><span className="text-sm font-semibold text-gray-900">{b.revenue}</span></td>}
+                      {col('margin') && <td className="px-3 py-3 text-right"><span className="text-sm font-semibold text-gray-900">{b.margin}</span></td>}
+                      {col('stockAtCost') && (
+                        <td className="px-3 py-3 text-right">
+                          <span className={`text-sm font-semibold ${b.stockCover > 4 ? 'text-red-600' : b.stockCover > 3 ? 'text-amber-600' : 'text-gray-900'}`}>{b.stockAtCost}</span>
+                        </td>
+                      )}
+                      {col('stockCover') && (
+                        <td className="px-3 py-3 text-right">
+                          <span className={`text-sm font-semibold ${b.stockCover > 4 ? 'text-red-600' : b.stockCover > 3 ? 'text-amber-600' : 'text-gray-900'}`}>{b.stockCover}</span>
+                        </td>
+                      )}
+                      {col('stockQuality') && (
+                        <td className="px-3 py-3 text-center">
+                          <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border ${sq.bg} ${sq.text}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${sq.dot}`} />
+                            {sq.label}
+                          </span>
+                        </td>
+                      )}
+                      <td className="px-3 py-3 text-center"><PerformanceBadge perf={b.performance} /></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
