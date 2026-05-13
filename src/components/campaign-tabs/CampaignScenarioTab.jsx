@@ -330,7 +330,7 @@ function CategoryMultiSelect({ value, onChange, locked, onLock, onUnlock }) {
                   ${isAll ? 'bg-[#2a44d4] border-[#2a44d4]' : 'border-gray-300 bg-white'}`}>
                   {isAll
                     ? <Check size={10} className="text-white" />
-                    : value.length > 0 ? <div className="w-2 h-0.5 bg-[#2a44d4] rounded" /> : null
+                    : effective.length > 0 ? <div className="w-2 h-0.5 bg-[#2a44d4] rounded" /> : null
                   }
                 </div>
                 <span className="text-xs font-semibold text-gray-700 flex-1">Select all</span>
