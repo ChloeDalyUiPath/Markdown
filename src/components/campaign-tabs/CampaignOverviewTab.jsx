@@ -17,6 +17,7 @@ import {
   Target,
   Plus,
   X,
+  LayoutGrid,
 } from 'lucide-react'
 import StatCard from '../StatCard'
 import {
@@ -385,6 +386,150 @@ const MICRO_INSIGHTS = {
   promoConversion: 'Conversion averaging 0.4pp above target — strongest single day was Day 3 at 3.4%',
   aov: 'AOV tracking £14 above baseline. Day 4 dip driven by accessories-heavy basket mix',
   stockDepletion: 'Stock depletion ahead of plan through Day 6, then slowed — monitor Day 7 carry-over risk',
+}
+
+// ---------------------------------------------------------------------------
+// Live category performance data
+// ---------------------------------------------------------------------------
+
+const LIVE_CAT_PERF = [
+  { id: 1, name: 'Coats & Jackets',  sellThrough: 71, target: 80, marginK: -13, units: 1240,  status: 'critical', insight: 'Low sell-through — consider additional markdown depth' },
+  { id: 5, name: 'Trousers & Jeans', sellThrough: 68, target: 80, marginK: -21, units: 1650,  status: 'critical', insight: 'Sell-through 12pp behind pace — stock cover high' },
+  { id: 6, name: 'Footwear',         sellThrough: 58, target: 75, marginK: -19, units: 780,   status: 'critical', insight: 'Lowest performer — immediate markdown action needed' },
+  { id: 3, name: 'Dresses',          sellThrough: 76, target: 80, marginK: -8,  units: 2100,  status: 'warning',  insight: 'Sell-through 4pp below pace — monitor closely' },
+  { id: 8, name: 'Knitwear Acc.',    sellThrough: 79, target: 80, marginK: -1,  units: 560,   status: 'warning',  insight: 'Marginally below target — no action needed yet' },
+  { id: 2, name: 'Knitwear',         sellThrough: 84, target: 80, marginK: 4,   units: 890,   status: 'on-track', insight: 'On track — 4pp above sell-through target' },
+  { id: 4, name: 'Tops & Blouses',   sellThrough: 91, target: 85, marginK: 11,  units: 3400,  status: 'on-track', insight: 'Outperforming plan — 6pp above target' },
+  { id: 7, name: 'Accessories',      sellThrough: 88, target: 80, marginK: 7,   units: 4200,  status: 'on-track', insight: 'Outperforming plan — 8pp above target' },
+]
+
+// ---------------------------------------------------------------------------
+// LiveCategoryPanel
+// ---------------------------------------------------------------------------
+
+function LiveCategoryPanel({ onNavigateToCategory }) {
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    if (!dropdownOpen) return
+    function handle(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setDropdownOpen(false)
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [dropdownOpen])
+
+  const STATUS_OPTIONS = [
+    { value: 'all',      label: 'All' },
+    { value: 'critical', label: 'Underperforming' },
+    { value: 'warning',  label: 'At risk' },
+    { value: 'on-track', label: 'On track' },
+  ]
+
+  const filtered = LIVE_CAT_PERF.filter(c =>
+    statusFilter === 'all' || c.status === statusFilter
+  )
+
+  const statusCfg = {
+    critical:  { label: 'Critical performance', icon: AlertTriangle, cls: 'text-red-600 bg-red-50 border-red-200' },
+    warning:   { label: 'Warning',              icon: AlertTriangle, cls: 'text-amber-600 bg-amber-50 border-amber-200' },
+    'on-track':{ label: 'On track',             icon: CheckCircle2,  cls: 'text-green-600 bg-green-50 border-green-200' },
+  }
+
+  const selectedLabel = STATUS_OPTIONS.find(o => o.value === statusFilter)?.label ?? 'All'
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5 mt-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <LayoutGrid size={15} className="text-gray-500" />
+          <h3 className="text-sm font-semibold text-gray-900">Categories</h3>
+          <span className="text-xs text-gray-400">Live performance by category</span>
+        </div>
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setDropdownOpen(o => !o)}
+            className="flex items-center gap-1.5 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            {selectedLabel} <ChevronDown size={11} className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {dropdownOpen && (
+            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[150px] py-1">
+              {STATUS_OPTIONS.map(o => (
+                <button key={o.value} onClick={() => { setStatusFilter(o.value); setDropdownOpen(false) }}
+                  className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                    statusFilter === o.value ? 'bg-[#2a44d4]/5 text-[#2a44d4] font-medium' : 'text-gray-700 hover:bg-gray-50'
+                  }`}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {filtered.map(cat => {
+          const cfg = statusCfg[cat.status]
+          const Icon = cfg.icon
+          const isUnder = cat.status !== 'on-track'
+          const marginStr = cat.marginK >= 0 ? `+£${cat.marginK}K` : `-£${Math.abs(cat.marginK)}K`
+
+          return (
+            <button
+              key={cat.id}
+              onClick={() => onNavigateToCategory(cat.name)}
+              className="text-left border border-gray-200 rounded-xl p-4 hover:border-[#2a44d4]/40 hover:shadow-sm transition-all group cursor-pointer w-full"
+            >
+              <div className="flex items-start justify-between gap-2 mb-1.5">
+                <span className="text-sm font-semibold text-gray-900">{cat.name}</span>
+                <span className={`inline-flex items-center gap-1 text-[10px] font-semibold border px-1.5 py-0.5 rounded-full flex-shrink-0 ${cfg.cls}`}>
+                  <Icon size={9} /> {cfg.label}
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-400 mb-3 leading-snug">{cat.insight}</p>
+
+              {/* Sell-through bar */}
+              <div className="mb-3">
+                <div className="flex items-center justify-between text-[10px] mb-1">
+                  <span className="text-gray-400">Sell-through</span>
+                  <span className={`font-semibold ${isUnder ? 'text-red-500' : 'text-green-600'}`}>
+                    {cat.sellThrough}%
+                    <span className="text-gray-300 font-normal"> / {cat.target}%</span>
+                  </span>
+                </div>
+                <div className="relative h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      cat.status === 'critical' ? 'bg-red-400' :
+                      cat.status === 'warning'  ? 'bg-amber-400' : 'bg-green-400'
+                    }`}
+                    style={{ width: `${cat.sellThrough}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Metrics row */}
+              <div className="flex items-center gap-3 text-xs">
+                <div>
+                  <span className="text-gray-400">Margin </span>
+                  <span className={`font-semibold ${cat.marginK >= 0 ? 'text-gray-700' : 'text-red-500'}`}>{marginStr}</span>
+                </div>
+                <span className="text-gray-200">|</span>
+                <div>
+                  <span className="text-gray-400">Units </span>
+                  <span className="font-semibold text-gray-700">{cat.units.toLocaleString()}</span>
+                </div>
+                <ChevronRight size={13} className="text-[#2a44d4] ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -1046,6 +1191,7 @@ export default function CampaignOverviewTab({
   status,
   onNavigateToProducts,
   onNavigateToTab,
+  onNavigateToCategory,
   campaignType,
   timelineHits = [],
   campaignHitsData = [],
@@ -1188,6 +1334,10 @@ export default function CampaignOverviewTab({
       ) : isPreLive && onNavigateToTab && checklistItems.length > 0 ? (
         <PreLaunchChecklist onNavigateToTab={onNavigateToTab} items={checklistItems} />
       ) : null}
+
+      {isLive && (
+        <LiveCategoryPanel onNavigateToCategory={onNavigateToCategory} />
+      )}
     </div>
   )
 }

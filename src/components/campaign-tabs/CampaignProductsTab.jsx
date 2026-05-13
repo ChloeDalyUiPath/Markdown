@@ -246,7 +246,12 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
   const [view, setView] = useState('Product Level')
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const [filterPerf, setFilterPerf] = useState(initialFilter || null)
+  const [filterPerf, setFilterPerf] = useState(
+    typeof initialFilter === 'string' ? initialFilter : null
+  )
+  const [filterCat, setFilterCat] = useState(
+    initialFilter?.type === 'category' ? initialFilter.name : null
+  )
   const [selectedCatIds, setSelectedCatIds] = useState(new Set())
   const [selectedProductIds, setSelectedProductIds] = useState(new Set())
   const [showHitModal, setShowHitModal] = useState(false)
@@ -262,7 +267,16 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
   const totalPages = 25
 
   useEffect(() => {
-    if (initialFilter) setFilterPerf(initialFilter)
+    if (typeof initialFilter === 'string') {
+      setFilterPerf(initialFilter)
+      setFilterCat(null)
+    } else if (initialFilter?.type === 'category') {
+      setFilterCat(initialFilter.name)
+      setFilterPerf(null)
+    } else {
+      setFilterPerf(null)
+      setFilterCat(null)
+    }
   }, [initialFilter])
 
   useEffect(() => {
@@ -313,6 +327,7 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
   const filteredCategories = sourceCatData.filter(c => {
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
     if (filterPerf === 'underperforming' && c.performance === 'on-track') return false
+    if (filterCat && c.name !== filterCat) return false
     return true
   })
   const displayProducts = isRL ? RL_PRODUCTS : products
@@ -411,6 +426,13 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
             <AlertTriangle size={11} /> Underperforming only
             <button onClick={() => setFilterPerf(null)} className="ml-1 text-red-400 hover:text-red-600">×</button>
           </span>
+        )}
+        {filterCat && (
+          <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2 mb-3 text-xs text-indigo-700">
+            <LayoutGrid size={12} className="flex-shrink-0" />
+            <span>Filtered to <strong>{filterCat}</strong></span>
+            <button onClick={() => setFilterCat(null)} className="ml-auto text-indigo-400 hover:text-indigo-600">×</button>
+          </div>
         )}
         {view === 'Product Level' && (
           <div className="ml-auto flex items-center gap-2 text-sm text-gray-500">

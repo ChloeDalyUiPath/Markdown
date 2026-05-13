@@ -247,6 +247,11 @@ export default function CampaignDetail({ campaign, onBack }) {
     setActiveTab('Products & Categories')
   }
 
+  function navigateToCategory(categoryName) {
+    setProductFilter({ type: 'category', name: categoryName })
+    setActiveTab('Products & Categories')
+  }
+
   return (
     <div className="p-6 min-w-0">
       {/* Breadcrumb */}
@@ -406,6 +411,7 @@ export default function CampaignDetail({ campaign, onBack }) {
           campaignType={campaign.type}
           onNavigateToProducts={navigateToProducts}
           onNavigateToTab={tab => setActiveTab(tab)}
+          onNavigateToCategory={navigateToCategory}
           timelineHits={timelineHits}
           campaignHitsData={campaignHitsData}
           isMultiBrand={campaign.isMultiBrand}
