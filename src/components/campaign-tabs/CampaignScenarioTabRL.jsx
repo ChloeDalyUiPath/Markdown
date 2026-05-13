@@ -527,13 +527,19 @@ function PreferencesPanel({
       {/* Lock / unlock actions */}
       {selectedCatIds.length > 0 && (
         <div className="flex gap-2 mb-4">
-          {hasUnlocked && (
+          {hasUnlocked ? (
             <button onClick={onConfirmLock}
               className="flex-1 py-2 rounded-lg text-xs font-semibold bg-[#2a44d4] hover:bg-[#2438b8] text-white transition-colors flex items-center justify-center gap-1.5"
             >
               <Lock size={11} /> Confirm & Lock
             </button>
-          )}
+          ) : hasLocked ? (
+            <button onClick={onConfirmLock}
+              className="flex-1 py-2 rounded-lg text-xs font-semibold bg-[#2a44d4] hover:bg-[#2438b8] text-white transition-colors flex items-center justify-center gap-1.5"
+            >
+              <Check size={11} /> Update
+            </button>
+          ) : null}
           {hasLocked && (
             <button onClick={onUnlock}
               className="flex-1 py-2 rounded-lg text-xs font-medium border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
@@ -554,16 +560,16 @@ function PreferencesPanel({
         <Toggle label="View gross margin ($)" value={viewGrossMargin} onChange={onViewGrossMarginChange} />
       </div>
 
-      {/* Confirmed categories */}
+      {/* Locked categories */}
       {lockedCats.length > 0 && (
         <div className="mt-4 pt-3 border-t border-gray-100">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Confirmed</p>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Saved</p>
             <span className="text-[10px] font-bold text-green-600 bg-green-50 border border-green-100 px-1.5 py-0.5 rounded-full">
               {lockedCats.length} / {RL_CATEGORIES.length}
             </span>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 overflow-y-auto" style={{ maxHeight: '96px' }}>
             {RL_CATEGORIES.filter(c => lockedCats.includes(c.id)).map(cat => {
               const sel   = categorySelections[cat.id]
               const curve = sel.guardrailSetId === 1 ? SET_A_CURVE : SET_B_CURVE
@@ -681,10 +687,8 @@ export default function CampaignScenarioTabRL({
       })
     }
     if (selectedCatIds.length > 0) {
-      const unlocked = selectedCatIds.filter(id => !lockedCats.includes(id))
-      if (unlocked.length === 0) return
       const update = {}
-      unlocked.forEach(catId => { update[catId] = { guardrailSetId: setId, pointId: point.id } })
+      selectedCatIds.forEach(catId => { update[catId] = { guardrailSetId: setId, pointId: point.id } })
       onSelectionsChange(prev => ({ ...prev, ...update }))
       if (pendingSetId !== setId) setPendingSetId(setId)
     }
