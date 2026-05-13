@@ -796,23 +796,27 @@ function CompletedSummary({ campaignType }) {
 // PerformanceChart
 // ---------------------------------------------------------------------------
 
-function PerformanceChart({ campaignType }) {
+function PerformanceChart({ campaignType, isLive = false, onNavigateToCategory }) {
   const metrics = campaignType === 'Promo' ? PROMO_CHART_METRICS : MARKDOWN_CHART_METRICS
   const [selectedMetricKey, setSelectedMetricKey] = useState(metrics[0].key)
   const [compareMetricKey, setCompareMetricKey] = useState(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [compareDropdownOpen, setCompareDropdownOpen] = useState(false)
+  const [catOpen, setCatOpen] = useState(false)
+  const [catFilter, setCatFilter] = useState('all')
   const dropdownRef = useRef(null)
   const compareDropdownRef = useRef(null)
+  const catRef = useRef(null)
 
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setDropdownOpen(false)
       if (compareDropdownRef.current && !compareDropdownRef.current.contains(e.target)) setCompareDropdownOpen(false)
+      if (catRef.current && !catRef.current.contains(e.target)) setCatOpen(false)
     }
-    if (dropdownOpen || compareDropdownOpen) document.addEventListener('mousedown', handleClickOutside)
+    if (dropdownOpen || compareDropdownOpen || catOpen) document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [dropdownOpen, compareDropdownOpen])
+  }, [dropdownOpen, compareDropdownOpen, catOpen])
 
   const selectedMetric = metrics.find(m => m.key === selectedMetricKey) || metrics[0]
   const compareMetric  = compareMetricKey ? metrics.find(m => m.key === compareMetricKey) : null
@@ -849,12 +853,94 @@ function PerformanceChart({ campaignType }) {
 
   const microInsight = MICRO_INSIGHTS[selectedMetricKey]
 
+  const CAT_STATUS_OPTS = [
+    { value: 'all',      label: 'All' },
+    { value: 'critical', label: 'Underperforming' },
+    { value: 'warning',  label: 'At risk' },
+    { value: 'on-track', label: 'On track' },
+  ]
+  const catStatusCfg = {
+    critical:  { label: 'Critical', icon: AlertTriangle, cls: 'text-red-600 bg-red-50 border-red-200' },
+    warning:   { label: 'Warning',  icon: AlertTriangle, cls: 'text-amber-600 bg-amber-50 border-amber-200' },
+    'on-track':{ label: 'On track', icon: CheckCircle2,  cls: 'text-green-600 bg-green-50 border-green-200' },
+  }
+  const filteredCats = LIVE_CAT_PERF.filter(c => catFilter === 'all' || c.status === catFilter)
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-semibold text-gray-900">Performance</h3>
         <div className="flex items-center gap-2">
+          {/* Categories dropdown — Live only */}
+          {isLive && (
+            <div className="relative" ref={catRef}>
+              <button
+                onClick={() => setCatOpen(o => !o)}
+                className={`flex items-center gap-1.5 text-xs border rounded-lg px-2.5 py-1.5 transition-colors ${
+                  catOpen ? 'border-[#2a44d4] text-[#2a44d4] bg-indigo-50' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <LayoutGrid size={11} /> Categories
+                <ChevronDown size={11} className={`transition-transform ${catOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {catOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-30 w-[520px]">
+                  {/* Filter tabs */}
+                  <div className="flex items-center gap-1 px-3 pt-3 pb-2 border-b border-gray-100">
+                    {CAT_STATUS_OPTS.map(o => (
+                      <button key={o.value} onClick={() => setCatFilter(o.value)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                          catFilter === o.value ? 'bg-[#2a44d4] text-white' : 'text-gray-500 hover:bg-gray-100'
+                        }`}>
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Category list */}
+                  <div className="p-3 grid grid-cols-2 gap-2 max-h-80 overflow-y-auto">
+                    {filteredCats.map(cat => {
+                      const cfg = catStatusCfg[cat.status]
+                      const Icon = cfg.icon
+                      const isUnder = cat.status !== 'on-track'
+                      const marginStr = cat.marginK >= 0 ? `+£${cat.marginK}K` : `-£${Math.abs(cat.marginK)}K`
+                      return (
+                        <button key={cat.id} onClick={() => { setCatOpen(false); onNavigateToCategory?.(cat.name) }}
+                          className="text-left border border-gray-100 rounded-xl p-3 hover:border-[#2a44d4]/40 hover:shadow-sm transition-all group cursor-pointer w-full"
+                        >
+                          <div className="flex items-start justify-between gap-1.5 mb-1">
+                            <span className="text-xs font-semibold text-gray-900">{cat.name}</span>
+                            <span className={`inline-flex items-center gap-0.5 text-[9px] font-semibold border px-1.5 py-0.5 rounded-full flex-shrink-0 ${cfg.cls}`}>
+                              <Icon size={8} /> {cfg.label}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-gray-400 mb-2 leading-snug">{cat.insight}</p>
+                          <div className="mb-2">
+                            <div className="flex items-center justify-between text-[10px] mb-0.5">
+                              <span className="text-gray-400">Sell-through</span>
+                              <span className={`font-semibold ${isUnder ? 'text-red-500' : 'text-green-600'}`}>
+                                {cat.sellThrough}%<span className="text-gray-300 font-normal"> / {cat.target}%</span>
+                              </span>
+                            </div>
+                            <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${cat.status === 'critical' ? 'bg-red-400' : cat.status === 'warning' ? 'bg-amber-400' : 'bg-green-400'}`}
+                                style={{ width: `${cat.sellThrough}%` }} />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px]">
+                            <span className="text-gray-400">Margin <span className={`font-semibold ${cat.marginK >= 0 ? 'text-gray-700' : 'text-red-500'}`}>{marginStr}</span></span>
+                            <span className="text-gray-200">|</span>
+                            <span className="text-gray-400">Units <span className="font-semibold text-gray-700">{cat.units.toLocaleString()}</span></span>
+                            <ChevronRight size={11} className="text-[#2a44d4] ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {/* Compare control */}
           {compareMetric ? (
             <div className="flex items-center gap-1 text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-gray-50">
@@ -1327,17 +1413,13 @@ export default function CampaignOverviewTab({
       {isLive && campaignHitsData.length > 0 ? (
         <div className="grid gap-4 items-stretch" style={{ gridTemplateColumns: '1fr 1fr' }}>
           <CampaignHitsPanel hits={campaignHitsData} isMultiBrand={isMultiBrand} />
-          <PerformanceChart campaignType={campaignType} />
+          <PerformanceChart campaignType={campaignType} isLive={isLive} onNavigateToCategory={onNavigateToCategory} />
         </div>
       ) : isLive ? (
-        <PerformanceChart campaignType={campaignType} />
+        <PerformanceChart campaignType={campaignType} isLive={isLive} onNavigateToCategory={onNavigateToCategory} />
       ) : isPreLive && onNavigateToTab && checklistItems.length > 0 ? (
         <PreLaunchChecklist onNavigateToTab={onNavigateToTab} items={checklistItems} />
       ) : null}
-
-      {isLive && (
-        <LiveCategoryPanel onNavigateToCategory={onNavigateToCategory} />
-      )}
     </div>
   )
 }
