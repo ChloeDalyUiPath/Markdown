@@ -492,7 +492,7 @@ function PreferencesPanel({
   pendingSetId, onPendingSetChange, onApplySet,
   compareMode, onCompareModeChange,
   viewGrossMargin, onViewGrossMarginChange,
-  onConfirmLock, onUnlock,
+  onConfirmLock, onClear, pointSelected,
 }) {
   const hasUnlocked = selectedCatIds.some(id => !lockedCats.includes(id))
   const hasLocked   = selectedCatIds.some(id =>  lockedCats.includes(id))
@@ -533,18 +533,18 @@ function PreferencesPanel({
             >
               <Lock size={11} /> Confirm & Lock
             </button>
-          ) : hasLocked ? (
+          ) : hasLocked && pointSelected ? (
             <button onClick={onConfirmLock}
               className="flex-1 py-2 rounded-lg text-xs font-semibold bg-[#2a44d4] hover:bg-[#2438b8] text-white transition-colors flex items-center justify-center gap-1.5"
             >
               <Check size={11} /> Update
             </button>
           ) : null}
-          {hasLocked && (
-            <button onClick={onUnlock}
+          {selectedCatIds.length > 0 && (
+            <button onClick={onClear}
               className="flex-1 py-2 rounded-lg text-xs font-medium border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
             >
-              <LockOpen size={11} /> Unlock
+              <X size={11} /> Clear
             </button>
           )}
         </div>
@@ -651,6 +651,7 @@ export default function CampaignScenarioTabRL({
 }) {
   const [selectedCatIds, setSelectedCatIds] = useState([])
   const [pendingSetId, setPendingSetId]     = useState(null)
+  const [pointSelected, setPointSelected]   = useState(false)
   const [viewSetId, setViewSetId]           = useState(1)
   const [compareMode, setCompareMode]       = useState(false)
   const [comparePoints, setComparePoints]   = useState([])
@@ -691,6 +692,7 @@ export default function CampaignScenarioTabRL({
       selectedCatIds.forEach(catId => { update[catId] = { guardrailSetId: setId, pointId: point.id } })
       onSelectionsChange(prev => ({ ...prev, ...update }))
       if (pendingSetId !== setId) setPendingSetId(setId)
+      setPointSelected(true)
     }
   }
 
@@ -698,6 +700,7 @@ export default function CampaignScenarioTabRL({
     setSelectedCatIds(prev =>
       prev.includes(catId) ? prev.filter(id => id !== catId) : [...prev, catId]
     )
+    setPointSelected(false)
   }
 
   function handleConfirmLock() {
@@ -705,10 +708,13 @@ export default function CampaignScenarioTabRL({
     if (toAdd.length > 0) onLockedCatsChange(prev => [...new Set([...prev, ...toAdd])])
     setSelectedCatIds([])
     setPendingSetId(null)
+    setPointSelected(false)
   }
 
-  function handleUnlock() {
-    onLockedCatsChange(prev => prev.filter(id => !selectedCatIds.includes(id)))
+  function handleClear() {
+    setSelectedCatIds([])
+    setPendingSetId(null)
+    setPointSelected(false)
   }
 
   function handleSave() {
@@ -809,7 +815,7 @@ export default function CampaignScenarioTabRL({
         <div className="flex flex-col gap-3">
           <PreferencesPanel
             selectedCatIds={selectedCatIds}
-            onCatIdsChange={setSelectedCatIds}
+            onCatIdsChange={ids => { setSelectedCatIds(ids); setPointSelected(false) }}
             categorySelections={categorySelections}
             lockedCats={lockedCats}
             pendingSetId={pendingSetId}
@@ -820,7 +826,8 @@ export default function CampaignScenarioTabRL({
             viewGrossMargin={viewGrossMargin}
             onViewGrossMarginChange={() => setViewGrossMargin(v => !v)}
             onConfirmLock={handleConfirmLock}
-            onUnlock={handleUnlock}
+            onClear={handleClear}
+            pointSelected={pointSelected}
           />
           <MarkdownDistribution />
         </div>
