@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ChevronDown, Check, Save, X, ArrowRightLeft, Plus, Info, AlertTriangle, Search, Lock, LockOpen } from 'lucide-react'
+import { ChevronDown, Check, Save, X, ArrowRightLeft, Plus, Info, AlertTriangle, Search, Lock, LockOpen, CheckCircle2 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts'
 import StatCard from '../StatCard'
 
@@ -189,7 +189,7 @@ function CategoryMultiSelect({ value, onChange, locked, onLock, onUnlock }) {
   const containerRef = useRef(null)
 
   const allIds = guardrailCategories.map(c => c.id)
-  const isAll  = value.length === 0
+  const isAll  = value !== null && value.length === 0
 
   // Close on outside click — isolated from everything else
   useEffect(() => {
@@ -207,16 +207,15 @@ function CategoryMultiSelect({ value, onChange, locked, onLock, onUnlock }) {
   useEffect(() => { if (!open) setSearch('') }, [open])
 
   function toggle(id) {
+    const effective = value == null ? [] : value
     let next
     if (isAll) {
-      // Start from all-checked: uncheck this one
       next = allIds.filter(i => i !== id)
     } else {
-      const already = value.includes(id)
-      next = already ? value.filter(i => i !== id) : [...value, id]
+      const already = effective.includes(id)
+      next = already ? effective.filter(i => i !== id) : [...effective, id]
     }
-    // Normalise: if every category is explicitly checked, treat as "all"
-    onChange(next.length === allIds.length ? [] : next.length === 0 ? [] : next)
+    onChange(next.length === allIds.length ? [] : next)
   }
 
   function selectAll() { onChange([]) }
@@ -225,10 +224,13 @@ function CategoryMultiSelect({ value, onChange, locked, onLock, onUnlock }) {
     !search || c.name.toLowerCase().includes(search.toLowerCase())
   )
 
-  const lockedCats   = guardrailCategories.filter(c => value.includes(c.id))
-  const selectedCount = isAll ? allIds.length : value.length
+  const effective     = value ?? []
+  const lockedCats    = guardrailCategories.filter(c => effective.includes(c.id))
+  const selectedCount = isAll ? allIds.length : effective.length
 
-  const triggerLabel = isAll
+  const triggerLabel = value == null
+    ? 'Select categories…'
+    : isAll
     ? 'All categories'
     : value.length === 1
       ? guardrailCategories.find(c => c.id === value[0])?.name ?? '1 category'
@@ -250,11 +252,11 @@ function CategoryMultiSelect({ value, onChange, locked, onLock, onUnlock }) {
           }`}
       >
         {locked && <Lock size={12} className="text-indigo-500 flex-shrink-0" />}
-        <span className="flex-1 truncate font-medium">{triggerLabel}</span>
+        <span className={`flex-1 truncate font-medium ${value == null ? 'text-gray-400' : ''}`}>{triggerLabel}</span>
         {locked
           ? <span className="text-[10px] font-bold text-indigo-600 bg-white border border-indigo-200 px-1.5 py-0.5 rounded-full flex-shrink-0">Locked</span>
           : !isAll
-            ? <span className="text-[10px] font-bold text-[#2a44d4] bg-indigo-50 px-1.5 py-0.5 rounded-full flex-shrink-0">{value.length}</span>
+            ? <span className="text-[10px] font-bold text-[#2a44d4] bg-indigo-50 px-1.5 py-0.5 rounded-full flex-shrink-0">{effective.length}</span>
             : null
         }
         {!locked && <ChevronDown size={14} className={`text-gray-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />}
@@ -340,7 +342,7 @@ function CategoryMultiSelect({ value, onChange, locked, onLock, onUnlock }) {
                 {visible.length === 0 ? (
                   <div className="px-3 py-5 text-xs text-gray-400 text-center">No categories match "{search}"</div>
                 ) : visible.map(cat => {
-                  const checked = isAll || value.includes(cat.id)
+                  const checked = isAll || (value != null && value.includes(cat.id))
                   const sig = stockSignal(cat.weeksOfCover)
                   return (
                     <div
@@ -1024,6 +1026,35 @@ function PreferencesPanel({
           onLock={onLockCategories}
           onUnlock={onUnlockCategories}
         />
+
+        {/* Saved categories */}
+        {categoryLocked && selectedCategories != null && (() => {
+          const saved = selectedCategories.length === 0
+            ? guardrailCategories
+            : guardrailCategories.filter(c => selectedCategories.includes(c.id))
+          return (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Saved</p>
+                <span className="text-[10px] font-bold text-green-600 bg-green-50 border border-green-100 px-1.5 py-0.5 rounded-full">
+                  {saved.length} / {guardrailCategories.length}
+                </span>
+              </div>
+              <div className="space-y-1 overflow-y-auto" style={{ maxHeight: '96px' }}>
+                {saved.map(cat => {
+                  const sig = stockSignal(cat.weeksOfCover)
+                  return (
+                    <div key={cat.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs bg-gray-50">
+                      <CheckCircle2 size={11} className="text-green-500 flex-shrink-0" />
+                      <span className="flex-1 text-left text-gray-700 font-medium truncate">{cat.name}</span>
+                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded flex-shrink-0 ${sig.cls}`}>{sig.label}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Toggles */}
@@ -1059,11 +1090,11 @@ function buildDefaultName(scenarioType, selectedIds, selectedGuardrails) {
 
 export default function CampaignScenarioTab({ onScenarioSaved }) {
   const [scenarioType, setScenarioType]           = useState('default')
-  const [selectedCategories, setSelectedCategories] = useState([])   // [] = all
+  const [selectedCategories, setSelectedCategories] = useState(null)  // null = nothing chosen yet, [] = all
   const [viewGrossMargin, setViewGrossMargin]     = useState(false)
   const [compareMode, setCompareMode]             = useState(false)
   const [flatDiscounts, setFlatDiscounts]         = useState(true)
-  const [selectedIds, setSelectedIds]             = useState([6])
+  const [selectedIds, setSelectedIds]             = useState([])
   const [selectedGuardrails, setSelectedGuardrails] = useState(
     Object.fromEntries(guardrailCategories.map(c => [c.id, 'balanced']))
   )
@@ -1076,7 +1107,7 @@ export default function CampaignScenarioTab({ onScenarioSaved }) {
   const displayPoints = flatDiscounts ? allPoints : allPoints.filter(p => p.type !== 'flat')
   const primaryPoint  = allPoints.find(p => p.id === selectedIds[0]) || null
 
-  const activeCats = selectedCategories.length === 0
+  const activeCats = selectedCategories == null || selectedCategories.length === 0
     ? guardrailCategories
     : guardrailCategories.filter(c => selectedCategories.includes(c.id))
 
@@ -1114,15 +1145,15 @@ export default function CampaignScenarioTab({ onScenarioSaved }) {
   function handleSaveConfirm(name) {
     setShowSaveModal(false)
     setSaveToast({ name })
-    if (selectedCategories.length > 0) setCategoryLocked(true)
-    const lockedCategoryNames = selectedCategories.length > 0
+    if (selectedCategories != null && selectedCategories.length > 0) setCategoryLocked(true)
+    const lockedCategoryNames = selectedCategories != null && selectedCategories.length > 0
       ? guardrailCategories.filter(c => selectedCategories.includes(c.id)).map(c => c.name)
       : []
     onScenarioSaved?.({ name, lockedCategoryNames })
   }
 
   function handleLockCategories() {
-    if (selectedCategories.length > 0) setCategoryLocked(true)
+    if (selectedCategories != null && selectedCategories.length > 0) setCategoryLocked(true)
   }
 
   function handleUnlockCategories() {
@@ -1196,13 +1227,29 @@ export default function CampaignScenarioTab({ onScenarioSaved }) {
               ))}
             </div>
 
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 relative">
               <ScenarioChart
                 points={displayPoints}
                 selectedIds={selectedIds}
                 onPointClick={handlePointClick}
                 compareMode={compareMode}
               />
+              {selectedCategories == null && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-white/90 border border-gray-200 rounded-xl px-5 py-3.5 text-center shadow-sm max-w-[220px]">
+                    <p className="text-xs font-semibold text-gray-700 mb-1">Select categories first</p>
+                    <p className="text-[11px] text-gray-400 leading-relaxed">Use the panel on the right to choose which categories to include.</p>
+                  </div>
+                </div>
+              )}
+              {selectedCategories != null && selectedIds.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-white/90 border border-gray-200 rounded-xl px-5 py-3.5 text-center shadow-sm max-w-[200px]">
+                    <p className="text-xs font-semibold text-gray-700 mb-1">Click a point</p>
+                    <p className="text-[11px] text-gray-400 leading-relaxed">Select a scenario point to see projected outcomes.</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1210,7 +1257,7 @@ export default function CampaignScenarioTab({ onScenarioSaved }) {
         <div className="flex flex-col gap-3">
           <PreferencesPanel
             selectedCategories={selectedCategories}
-            onCategoriesChange={v => { if (!categoryLocked) setSelectedCategories(v) }}
+            onCategoriesChange={v => { if (!categoryLocked) setSelectedCategories(v == null ? null : v) }}
             categoryLocked={categoryLocked}
             onLockCategories={handleLockCategories}
             onUnlockCategories={handleUnlockCategories}
