@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { Search, Filter, Clock, Calendar, ArrowDownRight, Lock, ChevronRight } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { Search, Filter, Clock, Calendar, ArrowDownRight, Lock, ChevronRight, Pencil, Check } from "lucide-react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Badge } from "./ui/badge"
@@ -148,6 +148,15 @@ function SizesBar({ progress }) {
   )
 }
 
+const ALL_INVENTORY_KPIS = [
+  { key: 'reorders',    label: 'Total Reorders',      value: '124',       delta: -12.5, deltaLabel: 'WoW' },
+  { key: 'quantity',    label: 'Total Quantity',       value: '94,850',    delta: -14.2, deltaLabel: 'WoW' },
+  { key: 'cost',        label: 'Reorder at Cost',      value: '£485.75K',  delta: -13.8, deltaLabel: 'WoW' },
+  { key: 'cover',       label: 'Av. Reorder Cover',    value: '4 Weeks',   delta: -20.0, deltaLabel: 'WoW' },
+  { key: 'pending',     label: 'Pending Approval',     value: '22,480',    delta:   2.1, deltaLabel: 'WoW' },
+  { key: 'declined',    label: 'Approval Declined',    value: '18,760',    delta:  -5.3, deltaLabel: 'WoW' },
+]
+
 function StatCard({ label, value, delta, deltaLabel }) {
   const isNegative = delta < 0
   return (
@@ -169,6 +178,26 @@ export default function InventoryPage() {
   const [selectedRows, setSelectedRows] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("reorder")
+  const [visibleKpiKeys, setVisibleKpiKeys] = useState(() => new Set(ALL_INVENTORY_KPIS.slice(0, 4).map(k => k.key)))
+  const [showKpiPanel,   setShowKpiPanel]   = useState(false)
+  const kpiPanelRef = useRef(null)
+
+  useEffect(() => {
+    function handler(e) {
+      if (kpiPanelRef.current && !kpiPanelRef.current.contains(e.target)) setShowKpiPanel(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function toggleKpi(key) {
+    setVisibleKpiKeys(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   const toggleRow = (id) => {
     setSelectedRows(prev =>
@@ -293,10 +322,38 @@ export default function InventoryPage() {
               </div>
             </div>
 
-            <StatCard label="Total Reorders" value="124" delta={-12.5} deltaLabel="WoW" />
-            <StatCard label="Total Quantity" value="94,850" delta={-14.2} deltaLabel="WoW" />
-            <StatCard label="Reorder at Cost" value="£485.75K" delta={-13.8} deltaLabel="WoW" />
-            <StatCard label="Av. Reorder Cover" value="4 Weeks" delta={-20.0} deltaLabel="WoW" />
+            {ALL_INVENTORY_KPIS.filter(k => visibleKpiKeys.has(k.key)).map(k => (
+              <StatCard key={k.key} label={k.label} value={k.value} delta={k.delta} deltaLabel={k.deltaLabel} />
+            ))}
+
+            {/* Edit KPIs button */}
+            <div className="relative shrink-0 self-start pt-1" ref={kpiPanelRef}>
+              <button
+                onClick={() => setShowKpiPanel(v => !v)}
+                className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
+                  showKpiPanel ? 'border-[#2a44d4] text-[#2a44d4] bg-indigo-50' : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                <Pencil size={11} />
+                Edit KPIs
+              </button>
+              {showKpiPanel && (
+                <div className="absolute top-full right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-20 w-52 overflow-hidden">
+                  <div className="px-3 py-2.5 border-b border-gray-100">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Available KPIs</span>
+                  </div>
+                  {ALL_INVENTORY_KPIS.map(k => (
+                    <button key={k.key} onClick={() => toggleKpi(k.key)}
+                      className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                      {k.label}
+                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${visibleKpiKeys.has(k.key) ? 'bg-[#2a44d4] border-[#2a44d4]' : 'border-gray-300'}`}>
+                        {visibleKpiKeys.has(k.key) && <Check size={9} className="text-white" />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Table */}

@@ -4,6 +4,7 @@ import {
   TrendingUp, TrendingDown, ChevronLeft, ChevronRight,
   ChevronsLeft, ChevronsRight, Edit2, Settings, ShieldAlert,
   AlertTriangle, CheckCircle2, LayoutGrid, Check, Lock, X, Plus, Tag,
+  Upload, Download,
 } from 'lucide-react'
 import { RL_CATEGORIES, SET_A_CURVE, SET_B_CURVE } from '../../data/rlStrategies'
 import CreateHitModal from '../CreateHitModal'
@@ -238,11 +239,242 @@ function isLockedCategory(catName, lockedNames) {
   })
 }
 
+// ─── Upload products modal ────────────────────────────────────────────────────
+
+const MOCK_UPLOAD_RESULTS = [
+  { sku: 'SKU-1042', name: 'Padded Gilet',      status: 'ready' },
+  { sku: 'SKU-1043', name: 'Merino Roll Neck',   status: 'ready' },
+  { sku: 'SKU-1044', name: 'Slim Trouser',        status: 'ready' },
+  { sku: 'SKU-1045', name: 'Canvas Belt',         status: 'duplicate' },
+  { sku: 'SKU-1046', name: 'Oxford Shirt',        status: 'ready' },
+  { sku: 'SKU-1047', name: 'Puffer Jacket',       status: 'ready' },
+  { sku: 'SKU-9999', name: '',                    status: 'not_found' },
+]
+
+export function UploadProductsModal({ existingCount, onClose, onAdd }) {
+  const [step, setStep] = useState(1)
+  const [fileName, setFileName] = useState(null)
+
+  const readyCount    = MOCK_UPLOAD_RESULTS.filter(r => r.status === 'ready').length
+  const dupCount      = MOCK_UPLOAD_RESULTS.filter(r => r.status === 'duplicate').length
+  const notFoundCount = MOCK_UPLOAD_RESULTS.filter(r => r.status === 'not_found').length
+
+  function handleFileSelect(e) {
+    const file = e.target.files?.[0]
+    if (file) { setFileName(file.name); setStep(2) }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Add products</h2>
+            <div className="flex items-center gap-2 mt-1.5">
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step >= 1 ? 'bg-[#2a44d4] text-white' : 'bg-gray-100 text-gray-400'}`}>1</div>
+              <div className={`h-px w-8 transition-colors ${step >= 2 ? 'bg-[#2a44d4]' : 'bg-gray-200'}`} />
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${step >= 2 ? 'bg-[#2a44d4] text-white' : 'bg-gray-100 text-gray-400'}`}>2</div>
+              <span className="text-xs text-gray-400 ml-1">{step === 1 ? 'Upload file' : 'Review & confirm'}</span>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={16} /></button>
+        </div>
+
+        {/* Step 1 — Upload */}
+        {step === 1 && (
+          <div className="p-6">
+            <p className="text-sm text-gray-500 mb-5">
+              Upload a CSV or Excel file with product IDs. New products will be added alongside your existing <strong>{existingCount.toLocaleString()}</strong> products — nothing will be removed.
+            </p>
+            <label className="block cursor-pointer">
+              <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-[#2a44d4] hover:bg-indigo-50/20 transition-colors">
+                <Upload size={22} className="mx-auto text-gray-300 mb-3" />
+                <p className="text-sm font-medium text-gray-700">Drop your file here, or <span className="text-[#2a44d4]">browse</span></p>
+                <p className="text-xs text-gray-400 mt-1">CSV or Excel · Max 10 MB</p>
+              </div>
+              <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileSelect} />
+            </label>
+            <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 h-px bg-gray-100" />
+              <span className="text-xs text-gray-400">or</span>
+              <div className="flex-1 h-px bg-gray-100" />
+            </div>
+            <button
+              onClick={() => { setFileName('pasted-ids'); setStep(2) }}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 text-left transition-colors"
+            >
+              Paste a list of product IDs...
+            </button>
+          </div>
+        )}
+
+        {/* Step 2 — Review */}
+        {step === 2 && (
+          <div className="p-6">
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <span className="flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full">
+                <CheckCircle2 size={10} /> {readyCount} ready to add
+              </span>
+              {dupCount > 0 && (
+                <span className="flex items-center gap-1 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full">
+                  <AlertTriangle size={10} /> {dupCount} already in campaign
+                </span>
+              )}
+              {notFoundCount > 0 && (
+                <span className="flex items-center gap-1 text-xs font-medium bg-red-50 text-red-600 border border-red-200 px-2.5 py-1 rounded-full">
+                  <X size={10} /> {notFoundCount} not found
+                </span>
+              )}
+            </div>
+            <div className="border border-gray-200 rounded-xl overflow-hidden mb-4">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500">Product ID</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500">Name</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {MOCK_UPLOAD_RESULTS.map((r, i) => (
+                    <tr key={r.sku} className={i < MOCK_UPLOAD_RESULTS.length - 1 ? 'border-b border-gray-100' : ''}>
+                      <td className="px-4 py-2.5 text-xs font-mono text-gray-500">{r.sku}</td>
+                      <td className="px-4 py-2.5 text-sm text-gray-800">{r.name || <span className="text-gray-300">—</span>}</td>
+                      <td className="px-4 py-2.5 text-right">
+                        {r.status === 'ready'      && <span className="text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">Ready</span>}
+                        {r.status === 'duplicate'  && <span className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">Already in campaign</span>}
+                        {r.status === 'not_found'  && <span className="text-xs font-medium text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">Not found</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-gray-400">Duplicates and unrecognised IDs will be skipped. Your existing products won't be removed.</p>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+          {step === 1 ? (
+            <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Cancel</button>
+          ) : (
+            <button onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-gray-700 transition-colors">← Back</button>
+          )}
+          {step === 2 && (
+            <button
+              onClick={() => { onAdd(readyCount); onClose() }}
+              className="flex items-center gap-1.5 bg-[#2a44d4] hover:bg-[#2438b8] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+            >
+              <Plus size={13} /> Add {readyCount} products
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Export confirmation modal ────────────────────────────────────────────────
+
+export function ExportProductsModal({ products: exportProducts, onClose, onConfirm }) {
+  const optimisedRows = exportProducts.filter(p => p.status === 'Optimised')
+  const originalRows  = exportProducts.filter(p => p.status !== 'Optimised')
+  const preview       = exportProducts.slice(0, 5)
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Export products</h2>
+            <p className="text-xs text-gray-400 mt-0.5">{exportProducts.length} products · CSV</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={16} /></button>
+        </div>
+
+        <div className="p-6">
+          {/* Validation chips */}
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
+            <span className="flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full">
+              <CheckCircle2 size={10} /> {optimisedRows.length} optimised
+            </span>
+            {originalRows.length > 0 && (
+              <span className="flex items-center gap-1 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full">
+                <AlertTriangle size={10} /> {originalRows.length} still at original price
+              </span>
+            )}
+          </div>
+
+          {originalRows.length > 0 && (
+            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
+              <AlertTriangle size={13} className="text-amber-500 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-700">
+                {originalRows.length} {originalRows.length === 1 ? 'product has' : 'products have'} not been optimised yet and will export with their original price. You can still export now or re-run optimisation first.
+              </p>
+            </div>
+          )}
+
+          {/* Preview table */}
+          <div className="border border-gray-200 rounded-xl overflow-hidden mb-3">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500">Product</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500">Category</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500">Price</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {preview.map((p, i) => (
+                  <tr key={p.id} className={i < preview.length - 1 ? 'border-b border-gray-100' : ''}>
+                    <td className="px-4 py-2.5">
+                      <div className="text-sm font-medium text-gray-800">{p.name}</div>
+                      <div className="text-xs text-gray-400 font-mono">{p.productId}</div>
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-gray-500">{p.category}</td>
+                    <td className="px-4 py-2.5 text-right text-sm text-gray-800">{p.price ? `£${p.price.toFixed(2)}` : '—'}</td>
+                    <td className="px-4 py-2.5 text-right">
+                      {p.status === 'Optimised'
+                        ? <span className="text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">Optimised</span>
+                        : <span className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">Original</span>
+                      }
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {exportProducts.length > 5 && (
+            <p className="text-xs text-gray-400 mb-1">Showing 5 of {exportProducts.length} products</p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Cancel</button>
+          <button
+            onClick={onConfirm}
+            className="flex items-center gap-1.5 bg-[#2a44d4] hover:bg-[#2438b8] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+          >
+            <Download size={13} /> Export {exportProducts.length} products
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function CampaignProductsTab({ status, initialFilter, savedScenario, onClearSavedScenario, isRL, rlLockedCats, rlCategorySelections, onCreateHit, existingHitsCount = 3, onDirty, isMultiBrand = false }) {
   const isLive = status === 'Live'
   const isPreLive = !isLive && status !== 'Completed'
+  const isDraftOrPreOpt = status === 'Draft' || status === 'Pre-optimisation'
+  const canSelect = status !== 'Completed'
   const [view, setView] = useState('Product Level')
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
@@ -255,11 +487,38 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
   const [selectedCatIds, setSelectedCatIds] = useState(new Set())
   const [selectedProductIds, setSelectedProductIds] = useState(new Set())
   const [showHitModal, setShowHitModal] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
   const [editedPrices, setEditedPrices] = useState({})
   const [editedMarkdowns, setEditedMarkdowns] = useState({})
 
+  const allProducts = isRL ? RL_PRODUCTS : products
+
+  function doExport(src) {
+    const rows = [
+      ['Product Name', 'Product ID', 'Category', 'Season', 'Status', 'Sales', 'Revenue', 'Margin %', 'Stock Cover (wks)'],
+      ...src.map(p => [p.name, p.productId, p.category, p.season, p.status, p.sales, p.revenue, p.margin, p.stock])
+    ]
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'campaign-products.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function getExportProducts() {
+    if (selectedProductIds.size > 0) return allProducts.filter(p => selectedProductIds.has(p.id))
+    return allProducts
+  }
+
   const [visibleCatCols, setVisibleCatCols] = useState(new Set(CAT_COLS.map(c => c.key)))
-  const [visibleProdCols, setVisibleProdCols] = useState(new Set(PROD_COLS.map(c => c.key)))
+  const [visibleProdCols, setVisibleProdCols] = useState(() =>
+    isDraftOrPreOpt
+      ? new Set(['category', 'season', 'status', 'country', 'sales', 'revenue', 'margin', 'stock'])
+      : new Set(PROD_COLS.map(c => c.key))
+  )
   const [visibleBrandCols, setVisibleBrandCols] = useState(new Set(BRAND_COLS.map(c => c.key)))
   const [showColPanel, setShowColPanel] = useState(false)
   const colPanelRef = useRef(null)
@@ -330,7 +589,7 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
     if (filterCat && c.name !== filterCat) return false
     return true
   })
-  const displayProducts = isRL ? RL_PRODUCTS : products
+  const displayProducts = allProducts
 
   return (
     <div>
@@ -345,15 +604,25 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
             <div className="text-2xl font-bold text-gray-900 mb-2">
               325,302 <span className="text-lg font-semibold text-gray-500">Products</span>
             </div>
-            <div className="flex rounded-full overflow-hidden h-2 mb-2" style={{ maxWidth: 400 }}>
-              <div className="bg-green-500 h-full" style={{ width: '75%' }} />
-              <div className="bg-amber-400 h-full" style={{ width: '10%' }} />
-              <div className="bg-gray-200 h-full flex-1" />
-            </div>
-            <div className="flex items-center gap-4 text-xs text-gray-500">
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-green-500" />Optimised: 243,492</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-amber-400" />Original Price: 34,034</span>
-            </div>
+            {isDraftOrPreOpt ? (
+              <div className="flex rounded-full overflow-hidden h-2 mb-2" style={{ maxWidth: 400 }}>
+                <div className="bg-gray-300 h-full w-full" />
+              </div>
+            ) : (
+              <div className="flex rounded-full overflow-hidden h-2 mb-2" style={{ maxWidth: 400 }}>
+                <div className="bg-green-500 h-full" style={{ width: '75%' }} />
+                <div className="bg-amber-400 h-full" style={{ width: '10%' }} />
+                <div className="bg-gray-200 h-full flex-1" />
+              </div>
+            )}
+            {isDraftOrPreOpt ? (
+              <div className="text-xs text-gray-400">Awaiting optimisation — all products at original price</div>
+            ) : (
+              <div className="flex items-center gap-4 text-xs text-gray-500">
+                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-green-500" />Optimised: 243,492</span>
+                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-amber-400" />Original Price: 34,034</span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {['Product Level', 'Category Level', ...(isMultiBrand ? ['Brand Level'] : [])].map(v => (
@@ -381,6 +650,12 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
         </div>
         <button className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
           <SlidersHorizontal size={14} /> Filter
+        </button>
+        <button
+          onClick={() => setShowExportModal(true)}
+          className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+        >
+          <Download size={14} /> {selectedProductIds.size > 0 ? `Export (${selectedProductIds.size})` : 'Export'}
         </button>
 
         {/* Columns button */}
@@ -455,11 +730,11 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  {isLive && <th className="w-10 px-3 py-3" />}
+                  {canSelect && <th className="w-10 px-3 py-3" />}
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 min-w-[160px]">Category</th>
                   {col('products') && (
                     <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">
-                      Products<br /><span className="font-normal text-gray-400">Optimised</span>
+                      Products{!isDraftOrPreOpt && <><br /><span className="font-normal text-gray-400">Optimised</span></>}
                     </th>
                   )}
                   {col('markdown') && <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Avg Markdown</th>}
@@ -493,7 +768,7 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
                   const rowLocked = locked || rlLocked
                   return (
                   <tr key={cat.rlCatId ?? cat.id} className={`${i < filteredCategories.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50 transition-colors ${rowLocked ? 'bg-indigo-50/30' : ''} ${selectedCatIds.has(cat.rlCatId ?? cat.id) ? 'bg-indigo-50/40' : ''}`}>
-                    {isLive && (
+                    {canSelect && (
                       <td className="w-10 px-3 py-3" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => toggleCatId(cat.rlCatId ?? cat.id)}
@@ -514,7 +789,7 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
                     {col('products') && (
                       <td className="px-3 py-3 text-right">
                         <div className="text-sm font-semibold text-gray-900">{cat.products.toLocaleString()}</div>
-                        <div className="text-xs text-gray-400">{cat.optimised.toLocaleString()} optimised</div>
+                        {!isDraftOrPreOpt && <div className="text-xs text-gray-400">{cat.optimised.toLocaleString()} optimised</div>}
                       </td>
                     )}
                     {col('markdown') && (
@@ -600,7 +875,7 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  {isLive && <th className="w-10 px-3 py-3" />}
+                  {canSelect && <th className="w-10 px-3 py-3" />}
                   <th className="text-left px-4 py-3 min-w-[140px]">
                     <div className="text-xs font-semibold text-gray-700">Product Name</div>
                     <div className="text-xs font-normal text-gray-400">Product ID</div>
@@ -627,7 +902,7 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
                 {displayProducts.map((p, i) => {
                   return (
                   <tr key={p.id} className={`${i < displayProducts.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50 ${selectedProductIds.has(p.id) ? 'bg-indigo-50/40' : ''}`}>
-                    {isLive && (
+                    {canSelect && (
                       <td className="w-10 px-3 py-3" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => toggleProductId(p.id)}
@@ -641,7 +916,7 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
                     {isMultiBrand && <td className="px-3 py-3 text-xs font-medium text-gray-700">{p.brand}</td>}
                     {col('category') && <td className="px-3 py-3 text-xs text-gray-600">{p.category}</td>}
                     {col('season') && <td className="px-3 py-3 text-xs text-gray-600">{p.season}</td>}
-                    {col('status') && <td className="px-3 py-3"><ProductStatusBadge status={p.status} /></td>}
+                    {col('status') && <td className="px-3 py-3"><ProductStatusBadge status={isDraftOrPreOpt ? 'Original' : p.status} /></td>}
                     {isRL && (
                       <td className="px-3 py-3 text-center">
                         {(() => {
@@ -798,7 +1073,7 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
       )}
 
       {/* Floating selection bar */}
-      {isLive && totalSelected > 0 && (
+      {canSelect && totalSelected > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
           <div className="flex items-center gap-4 bg-gray-900 text-white rounded-2xl px-5 py-3.5 shadow-2xl">
             <div className="flex items-center gap-2">
@@ -812,13 +1087,21 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
               </span>
             </div>
             <div className="w-px h-5 bg-white/20" />
-            <button
-              onClick={() => setShowHitModal(true)}
-              className="flex items-center gap-1.5 bg-[#2a44d4] hover:bg-[#2438b8] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
-            >
-              <Plus size={14} />
-              Create Hit
-            </button>
+            {isLive ? (
+              <button
+                onClick={() => setShowHitModal(true)}
+                className="flex items-center gap-1.5 bg-[#2a44d4] hover:bg-[#2438b8] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+              >
+                <Plus size={14} /> Create Hit
+              </button>
+            ) : (
+              <button
+                onClick={clearSelection}
+                className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+              >
+                <X size={14} /> Remove from campaign
+              </button>
+            )}
             <button onClick={clearSelection} className="text-white/50 hover:text-white text-sm transition-colors">
               Clear
             </button>
@@ -832,6 +1115,13 @@ export default function CampaignProductsTab({ status, initialFilter, savedScenar
           onCreateHit={hit => { onCreateHit?.(hit); clearSelection() }}
           existingHitsCount={existingHitsCount}
           preselectedCategories={getPreselectedCategories()}
+        />
+      )}
+      {showExportModal && (
+        <ExportProductsModal
+          products={getExportProducts()}
+          onClose={() => setShowExportModal(false)}
+          onConfirm={() => { doExport(getExportProducts()); setShowExportModal(false) }}
         />
       )}
     </div>

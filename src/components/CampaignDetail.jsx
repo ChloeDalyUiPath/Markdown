@@ -18,7 +18,7 @@ import {
   Save,
 } from 'lucide-react'
 import CampaignOverviewTab from './campaign-tabs/CampaignOverviewTab'
-import CampaignProductsTab from './campaign-tabs/CampaignProductsTab'
+import CampaignProductsTab, { UploadProductsModal } from './campaign-tabs/CampaignProductsTab'
 import CampaignScenarioTab from './campaign-tabs/CampaignScenarioTab'
 import CampaignScenarioTabRL from './campaign-tabs/CampaignScenarioTabRL'
 import CampaignSettingsTab from './campaign-tabs/CampaignSettingsTab'
@@ -36,6 +36,32 @@ const INITIAL_CAMPAIGN_HITS = [
   { id: 3, name: 'Hit 3: Final clearance', discount: '45% Discount', categories: '12 Categories', status: 'Draft', recommended: true, sellThrough: null, revenue: null, units: '— / 45 target', perDay: '—' },
   { id: 2, name: 'Hit 2: Extra 20% off slow movers', discount: '20% Discount', categories: '4 Categories', status: 'Live', alert: '51 units needed to hit target', daysLeft: '3d left', sellThrough: '66%', revenue: '£1.5K+', units: '125 / 176 units sold', perDay: '£1.3K /day' },
   { id: 1, name: 'Hit 1: Initial 5% discount', discount: '5% off', categories: '10 Categories', status: 'Completed', missedTarget: 'Missed target by 5%', sellThrough: '78%', revenue: '£2.5K+', units: '34 / 45 units sold', perDay: '£1.3K /day' },
+]
+
+const MULTI_HIT_TIMELINE_HITS = [
+  { id: 1, label: 'Hit 1', pct: 18, status: 'Completed', date: '06/02',
+    children: [
+      { id: '1a', label: 'Hit 1a', pct: 11, status: 'Completed', date: '02/02' },
+      { id: '1b', label: 'Hit 1b', pct: 16, status: 'Completed', date: '05/02' },
+    ]
+  },
+  { id: 2, label: 'Hit 2', pct: 42, status: 'Live', date: '16/02',
+    children: [
+      { id: '2a', label: 'Hit 2a', pct: 34, status: 'Completed', date: '12/02' },
+      { id: '2b', label: 'Hit 2b', pct: 50, status: 'Live',      date: '20/02' },
+    ]
+  },
+  { id: 3, label: 'Hit 3', pct: 64, status: 'Draft', date: '28/02' },
+  { id: 4, label: 'Hit 4', pct: 77, status: 'Draft', date: '07/03' },
+  { id: 5, label: 'Hit 5', pct: 88, status: 'Draft', date: '14/03' },
+]
+
+const MULTI_HIT_CAMPAIGN_HITS = [
+  { id: 5, name: 'Hit 5: Weekend flash event',       discount: '40% Discount', categories: '8 Categories',  status: 'Draft',     recommended: true,  sellThrough: null, revenue: null, units: '— / 80 target' },
+  { id: 4, name: 'Hit 4: Last-chance size runs',     discount: '35% Discount', categories: '6 Categories',  status: 'Draft',     recommended: false, sellThrough: null, revenue: null, units: '— / 60 target' },
+  { id: 3, name: 'Hit 3: Final clearance push',      discount: '45% Discount', categories: '12 Categories', status: 'Draft',     recommended: true,  sellThrough: null, revenue: null, units: '— / 45 target' },
+  { id: 2, name: 'Hit 2: Extra 20% off slow movers', discount: '20% Discount', categories: '4 Categories',  status: 'Live',      alert: '51 units needed to hit target', daysLeft: '3d left', sellThrough: '66%', revenue: '£1.5K+', units: '125 / 176 units sold' },
+  { id: 1, name: 'Hit 1: Initial 5% discount',       discount: '5% off',       categories: '10 Categories', status: 'Completed', missedTarget: 'Missed target by 5%', sellThrough: '78%', revenue: '£2.5K+', units: '34 / 45 units sold' },
 ]
 
 const END_TIMELINE_HITS = [
@@ -130,12 +156,21 @@ function UnsavedChangesModal({ targetTab, onSaveAndSwitch, onDiscardAndSwitch, o
   )
 }
 
-function HeaderActions({ status, onCreateHit, onSave }) {
+function HeaderActions({ status, onCreateHit, onSave, onAddProducts }) {
   if (status === 'Draft' || status === 'Pre-optimisation') return (
-    <button className="flex items-center gap-1.5 bg-[#2a44d4] hover:bg-[#2438b8] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-      <Sparkles size={14} />
-      Optimise campaign
-    </button>
+    <div className="flex items-center gap-2">
+      <button
+        onClick={onAddProducts}
+        className="flex items-center gap-1.5 border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+      >
+        <Plus size={14} />
+        Add products
+      </button>
+      <button className="flex items-center gap-1.5 bg-[#2a44d4] hover:bg-[#2438b8] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+        <Sparkles size={14} />
+        Optimise campaign
+      </button>
+    </div>
   )
   if (status === 'Optimised') return (
     <div className="flex items-center gap-2">
@@ -173,9 +208,22 @@ export default function CampaignDetail({ campaign, onBack }) {
   const [showMenu, setShowMenu] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showCreateHitModal, setShowCreateHitModal] = useState(false)
-  const [timelineHits, setTimelineHits] = useState(campaign.isMultiBrand ? END_TIMELINE_HITS : INITIAL_TIMELINE_HITS)
-  const [campaignHitsData, setCampaignHitsData] = useState(campaign.isMultiBrand ? END_CAMPAIGN_HITS : INITIAL_CAMPAIGN_HITS)
+  const zeroHitsLive = campaign.status === 'Live' && !campaign.isMultiBrand && campaign.campaignHits === 0
+  const isMultiHit   = campaign.id === 6
+  const [timelineHits, setTimelineHits] = useState(
+    campaign.isMultiBrand ? END_TIMELINE_HITS :
+    isMultiHit            ? MULTI_HIT_TIMELINE_HITS :
+    zeroHitsLive          ? [] :
+    INITIAL_TIMELINE_HITS
+  )
+  const [campaignHitsData, setCampaignHitsData] = useState(
+    campaign.isMultiBrand ? END_CAMPAIGN_HITS :
+    isMultiHit            ? MULTI_HIT_CAMPAIGN_HITS :
+    zeroHitsLive          ? [] :
+    INITIAL_CAMPAIGN_HITS
+  )
   const [isDirty, setIsDirty] = useState(false)
+  const [showAddProductsModal, setShowAddProductsModal] = useState(false)
   const [pendingTab, setPendingTab] = useState(null)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [saveFlash, setSaveFlash] = useState(false)
@@ -333,7 +381,7 @@ export default function CampaignDetail({ campaign, onBack }) {
               </div>
             )}
           </div>
-          <HeaderActions status={status} onCreateHit={() => setShowCreateHitModal(true)} onSave={handleSave} />
+          <HeaderActions status={status} onCreateHit={() => setShowCreateHitModal(true)} onSave={handleSave} onAddProducts={() => setShowAddProductsModal(true)} />
         </div>
       </div>
 
@@ -408,10 +456,12 @@ export default function CampaignDetail({ campaign, onBack }) {
       {activeTab === 'Overview' && (
         <CampaignOverviewTab
           status={status}
+          campaignName={campaign.name}
           campaignType={campaign.type}
           onNavigateToProducts={navigateToProducts}
           onNavigateToTab={tab => setActiveTab(tab)}
           onNavigateToCategory={navigateToCategory}
+          onCreateHit={() => setShowCreateHitModal(true)}
           timelineHits={timelineHits}
           campaignHitsData={campaignHitsData}
           isMultiBrand={campaign.isMultiBrand}
@@ -444,8 +494,15 @@ export default function CampaignDetail({ campaign, onBack }) {
             />
           : <CampaignScenarioTab status={status} onScenarioSaved={s => { setSavedScenario(s); setIsDirty(false) }} />
       )}
-      {activeTab === 'Settings' && <CampaignSettingsTab campaign={campaign} />}
+      {activeTab === 'Settings' && <CampaignSettingsTab campaign={campaign} status={status} onDirty={setIsDirty} />}
 
+      {showAddProductsModal && (
+        <UploadProductsModal
+          existingCount={325302}
+          onClose={() => setShowAddProductsModal(false)}
+          onAdd={() => setShowAddProductsModal(false)}
+        />
+      )}
       {showCreateModal && (
         <CreateCampaignModal onClose={() => setShowCreateModal(false)} onCreated={() => setShowCreateModal(false)} />
       )}

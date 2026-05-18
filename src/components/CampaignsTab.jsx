@@ -6,6 +6,25 @@ import {
   TrendingUp, TrendingDown, Minus, ArrowRight, PlusCircle, Layers,
 } from 'lucide-react'
 
+function HitStatusBadge({ status }) {
+  if (status === 'Live') return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+      Live
+    </span>
+  )
+  if (status === 'Completed') return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+      <CheckCircle2 size={9} /> Done
+    </span>
+  )
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+      <FileText size={9} /> Draft
+    </span>
+  )
+}
+
 // ─── Data ─────────────────────────────────────────────────────────────────────
 // Plan fields: revenuePlan, sellThroughPlan, marginPlan
 // Elapsed fields (Live only): elapsed = { pct, days, total }
@@ -558,6 +577,16 @@ export default function CampaignsTab({ onSelectCampaign, onCompare }) {
   const [search, setSearch]           = useState('')
   const [perfFilter, setPerfFilter]   = useState(null)
   const [selectedIds, setSelectedIds] = useState(new Set())
+  const [expandedHitIds, setExpandedHitIds] = useState(new Set())
+
+  function toggleHits(id, e) {
+    e.stopPropagation()
+    setExpandedHitIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   const filtered = campaigns.filter(c => {
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
@@ -662,9 +691,10 @@ export default function CampaignsTab({ onSelectCampaign, onCompare }) {
       {/* Campaign cards */}
       <div className="space-y-3">
         {filtered.map(c => {
-          const isSelected = selectedIds.has(c.id)
-          const perf       = c.performance ? perfConfig[c.performance] : null
-          const hasData    = c.status === 'Live' || c.status === 'Completed'
+          const isSelected   = selectedIds.has(c.id)
+          const hitsExpanded = expandedHitIds.has(c.id)
+          const perf         = c.performance ? perfConfig[c.performance] : null
+          const hasData      = c.status === 'Live' || c.status === 'Completed'
 
           // Compatibility — only compute when exactly 1 other campaign is selected
           const compat = singleSelected && !isSelected
@@ -779,6 +809,56 @@ export default function CampaignsTab({ onSelectCampaign, onCompare }) {
                   </div>
                 )}
               </div>
+
+              {/* Hits footer */}
+              {c.campaignHits > 0 && (
+                <>
+                  <button
+                    onClick={e => toggleHits(c.id, e)}
+                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 border-t border-gray-100 text-left transition-colors ${
+                      hitsExpanded ? 'bg-gray-50' : 'hover:bg-gray-50/70'
+                    } ${!hitsExpanded ? 'rounded-b-xl' : ''}`}
+                  >
+                    <Zap size={11} className="text-[#2a44d4] flex-shrink-0" />
+                    <span className="text-xs font-semibold text-gray-700">
+                      {c.campaignHits} {c.campaignHits === 1 ? 'Hit' : 'Hits'}
+                    </span>
+                    <div className="flex items-center gap-1 flex-1">
+                      {c.hits.map((h, idx) => (
+                        <span
+                          key={idx}
+                          title={`${h.name} · ${h.status}`}
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            h.status === 'Live'      ? 'bg-green-500' :
+                            h.status === 'Completed' ? 'bg-gray-300'  : 'bg-amber-400'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <ChevronDown
+                      size={13}
+                      className={`text-gray-400 flex-shrink-0 transition-transform duration-150 ${hitsExpanded ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+
+                  {hitsExpanded && (
+                    <div className="border-t border-gray-100 bg-gray-50/60 rounded-b-xl px-4 py-3 space-y-2">
+                      {c.hits.map((h, idx) => (
+                        <div key={idx} className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-400 flex-shrink-0">
+                            {idx + 1}
+                          </div>
+                          <span className="text-xs font-medium text-gray-800 flex-1 min-w-0 truncate">{h.name}</span>
+                          <span className="text-[10px] font-semibold text-[#2a44d4] bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+                            {h.discount}
+                          </span>
+                          <HitStatusBadge status={h.status} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )
         })}

@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
-import { Search, SlidersHorizontal, Columns2, Check } from 'lucide-react'
+import { Search, SlidersHorizontal, Columns2, Check, Pencil } from 'lucide-react'
 import StatCard from './StatCard'
 
-const stats = [
-  { label: 'Units Sold (last week)', value: '9,343', change: '+2.4% WoW', color: 'green' },
-  { label: 'Margin (last week)', value: '26.0%', change: '-2.4% WoW', color: 'red' },
-  { label: 'Total Stock Cover (weeks)', value: '7.3', change: '-1.8% WoW', color: 'amber' },
-  { label: 'Revenue (last week)', value: '$1.26M', change: '+5.2% WoW', color: 'blue' },
+const ALL_PRODUCT_KPIS = [
+  { key: 'units',   label: 'Units Sold (last week)',        value: '9,343',  change: '+2.4% WoW',  color: 'green' },
+  { key: 'margin',  label: 'Margin (last week)',            value: '26.0%',  change: '-2.4% WoW',  color: 'red'   },
+  { key: 'cover',   label: 'Total Stock Cover (weeks)',     value: '7.3',    change: '-1.8% WoW',  color: 'amber' },
+  { key: 'revenue', label: 'Revenue (last week)',           value: '$1.26M', change: '+5.2% WoW',  color: 'blue'  },
+  { key: 'returns', label: 'Return Rate',                   value: '4.2%',   change: '-0.8% WoW',  color: 'green' },
+  { key: 'aov',     label: 'Avg Selling Price',             value: '$134',   change: '+1.2% WoW',  color: 'slate' },
 ]
 
 const products = [
@@ -130,6 +132,10 @@ export default function ProductsTab() {
   const [showColPanel, setShowColPanel] = useState(false)
   const colPanelRef = useRef(null)
 
+  const [visibleKpiKeys, setVisibleKpiKeys] = useState(() => new Set(ALL_PRODUCT_KPIS.slice(0, 4).map(k => k.key)))
+  const [showKpiPanel,   setShowKpiPanel]   = useState(false)
+  const kpiPanelRef = useRef(null)
+
   useEffect(() => {
     if (!showColPanel) return
     function handler(e) {
@@ -138,6 +144,23 @@ export default function ProductsTab() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showColPanel])
+
+  useEffect(() => {
+    function handler(e) {
+      if (kpiPanelRef.current && !kpiPanelRef.current.contains(e.target)) setShowKpiPanel(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function toggleKpi(key) {
+    setVisibleKpiKeys(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   function toggleCol(key) {
     setVisibleCols(prev => {
@@ -198,11 +221,43 @@ export default function ProductsTab() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-4 mb-5">
-        {stats.map((s) => (
-          <StatCard key={s.label} {...s} />
-        ))}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Key metrics</span>
+        <div className="relative" ref={kpiPanelRef}>
+          <button
+            onClick={() => setShowKpiPanel(v => !v)}
+            className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
+              showKpiPanel ? 'border-[#2a44d4] text-[#2a44d4] bg-indigo-50' : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            <Pencil size={11} />
+            Edit KPIs
+          </button>
+          {showKpiPanel && (
+            <div className="absolute top-full right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-20 w-52 overflow-hidden">
+              <div className="px-3 py-2.5 border-b border-gray-100">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Available KPIs</span>
+              </div>
+              {ALL_PRODUCT_KPIS.map(k => (
+                <button key={k.key} onClick={() => toggleKpi(k.key)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                  {k.label}
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${visibleKpiKeys.has(k.key) ? 'bg-[#2a44d4] border-[#2a44d4]' : 'border-gray-300'}`}>
+                    {visibleKpiKeys.has(k.key) && <Check size={9} className="text-white" />}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+      {visibleKpiKeys.size > 0 && (
+        <div className="grid grid-cols-4 gap-4 mb-5">
+          {ALL_PRODUCT_KPIS.filter(k => visibleKpiKeys.has(k.key)).map(s => (
+            <StatCard key={s.key} {...s} />
+          ))}
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative w-72 mb-4">

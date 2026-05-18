@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Calendar, Info } from 'lucide-react'
+import { ChevronDown, ChevronUp, Calendar, Info, AlertTriangle } from 'lucide-react'
 
 function SectionHeader({ title, description }) {
   return (
@@ -31,42 +31,42 @@ function TextInput({ value, onChange, placeholder }) {
   )
 }
 
-function SelectInput({ placeholder }) {
+function SelectInput({ placeholder, onChange }) {
   return (
-    <button className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-400 hover:bg-gray-50 transition-colors">
+    <button onClick={onChange} className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-400 hover:bg-gray-50 transition-colors">
       {placeholder}
       <ChevronDown size={14} className="text-gray-400 shrink-0" />
     </button>
   )
 }
 
-function StepInput({ value, placeholder }) {
+function StepInput({ value, placeholder, onChange }) {
   const [val, setVal] = useState(value || '')
   return (
     <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
       <input
         type="text"
         value={val}
-        onChange={e => setVal(e.target.value)}
+        onChange={e => { setVal(e.target.value); onChange?.() }}
         placeholder={placeholder}
         className="flex-1 px-3 py-2.5 text-sm text-gray-800 focus:outline-none"
       />
       <div className="flex flex-col border-l border-gray-200">
-        <button onClick={() => {}} className="px-2 py-1 hover:bg-gray-50 border-b border-gray-200"><ChevronUp size={10} /></button>
-        <button onClick={() => {}} className="px-2 py-1 hover:bg-gray-50"><ChevronDown size={10} /></button>
+        <button onClick={() => { setVal(v => v); onChange?.() }} className="px-2 py-1 hover:bg-gray-50 border-b border-gray-200"><ChevronUp size={10} /></button>
+        <button onClick={() => { setVal(v => v); onChange?.() }} className="px-2 py-1 hover:bg-gray-50"><ChevronDown size={10} /></button>
       </div>
     </div>
   )
 }
 
-function Checkbox({ label, hint }) {
+function Checkbox({ label, hint, onChange }) {
   const [checked, setChecked] = useState(false)
   return (
     <label className="flex items-center gap-2 cursor-pointer">
       <input
         type="checkbox"
         checked={checked}
-        onChange={() => setChecked(c => !c)}
+        onChange={() => { setChecked(c => !c); onChange?.() }}
         className="w-4 h-4 rounded border-gray-300 accent-[#2a44d4]"
       />
       <span className="text-sm text-gray-700">{label}</span>
@@ -75,11 +75,19 @@ function Checkbox({ label, hint }) {
   )
 }
 
-export default function CampaignSettingsTab({ campaign }) {
+export default function CampaignSettingsTab({ campaign, status, onDirty }) {
   const [name, setName] = useState(campaign?.name || 'End of Autumn Coats')
+
+  function markDirty() { onDirty?.(true) }
 
   return (
     <div className="max-w-4xl space-y-0">
+      {status === 'Live' && (
+        <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
+          <AlertTriangle size={14} className="text-amber-500 shrink-0" />
+          <p className="text-sm text-amber-700">This campaign is live. Changes to settings will take effect immediately.</p>
+        </div>
+      )}
       {/* General Information */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
         <div className="grid grid-cols-[220px_1fr] gap-8">
@@ -90,19 +98,19 @@ export default function CampaignSettingsTab({ campaign }) {
           <div className="space-y-4">
             <div>
               <Label>Name</Label>
-              <TextInput value={name} onChange={e => setName(e.target.value)} />
+              <TextInput value={name} onChange={e => { setName(e.target.value); markDirty() }} />
             </div>
             <div>
               <Label>Categories</Label>
-              <SelectInput placeholder="Select categories" />
+              <SelectInput placeholder="Select categories" onChange={markDirty} />
             </div>
             <div>
               <Label>Locations</Label>
-              <SelectInput placeholder="Select locations" />
+              <SelectInput placeholder="Select locations" onChange={markDirty} />
             </div>
             <div>
               <Label>Campaign dates</Label>
-              <button className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-400 hover:bg-gray-50 transition-colors">
+              <button onClick={markDirty} className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-400 hover:bg-gray-50 transition-colors">
                 Select date range
                 <Calendar size={14} className="text-gray-400" />
               </button>
@@ -122,45 +130,45 @@ export default function CampaignSettingsTab({ campaign }) {
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <Label>Min markdown %</Label>
-                <StepInput value="10%" />
+                <StepInput value="10%" onChange={markDirty} />
               </div>
               <div>
                 <Label>Max markdown %</Label>
-                <StepInput value="40%" />
+                <StepInput value="40%" onChange={markDirty} />
               </div>
             </div>
 
             <div className="mb-4">
               <Label>Min gross margin minimum target (£)</Label>
-              <StepInput value="$12,000" />
+              <StepInput value="$12,000" onChange={markDirty} />
             </div>
 
             <div className="space-y-3 mb-4">
-              <Checkbox label="Allow bypass of guardrails and alert me." hint />
-              <Checkbox label="Include suggested products only" hint />
-              <Checkbox label="Advanced roll up" hint />
-              <Checkbox label="Rolling Markdown" hint />
+              <Checkbox label="Allow bypass of guardrails and alert me." hint onChange={markDirty} />
+              <Checkbox label="Include suggested products only" hint onChange={markDirty} />
+              <Checkbox label="Advanced roll up" hint onChange={markDirty} />
+              <Checkbox label="Rolling Markdown" hint onChange={markDirty} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Messaging discount</Label>
-                <TextInput value="Up to 40% off" />
+                <TextInput value="Up to 40% off" onChange={markDirty} />
               </div>
               <div>
                 <Label hint>Min % of products with discount messaging</Label>
-                <StepInput value="40%" />
+                <StepInput value="40%" onChange={markDirty} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div>
                 <Label>Price bounds lower</Label>
-                <SelectInput placeholder="Select one or multiple bounds" />
+                <SelectInput placeholder="Select one or multiple bounds" onChange={markDirty} />
               </div>
               <div>
                 <Label>Price bounds upper</Label>
-                <SelectInput placeholder="Select one or multiple bounds" />
+                <SelectInput placeholder="Select one or multiple bounds" onChange={markDirty} />
               </div>
             </div>
           </div>

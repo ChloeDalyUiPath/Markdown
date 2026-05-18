@@ -17,7 +17,13 @@ import {
   Target,
   Plus,
   X,
+  Zap,
   LayoutGrid,
+  TrendingUp,
+  TrendingDown,
+  Package,
+  ArrowLeft,
+  Pencil,
 } from 'lucide-react'
 import StatCard from '../StatCard'
 import {
@@ -36,39 +42,30 @@ import {
 // KPI card data
 // ---------------------------------------------------------------------------
 
-const kpiCards = [
-  { label: 'Avg Margin',       value: '30.3%',  change: '-2% vs target',  negative: true,  color: 'amber' },
-  { label: 'Avg Sell-Through', value: '65%',    change: '-10% vs target', negative: true,  color: 'green' },
-  { label: 'Avg Cover',        value: '4 weeks',change: '-2% vs target',  negative: true,  color: 'amber' },
-  { label: 'Total Revenue',    value: '€4.4M',  change: '-3% vs target',  negative: true,  color: 'blue'  },
+const ALL_MARKDOWN_KPIS = [
+  { key: 'margin',   label: 'Avg Margin',       value: '30.3%',  change: '-2% vs target',   negative: true,  color: 'amber' },
+  { key: 'sellThru', label: 'Avg Sell-Through', value: '65%',    change: '-10% vs target',  negative: true,  color: 'green' },
+  { key: 'cover',    label: 'Avg Cover',        value: '4 weeks',change: '-2% vs target',   negative: true,  color: 'amber' },
+  { key: 'revenue',  label: 'Total Revenue',    value: '€4.4M',  change: '-3% vs target',   negative: true,  color: 'blue'  },
+  { key: 'units',    label: 'Units Sold',       value: '12,420', change: '+3.4% vs target', negative: false, color: 'green' },
+  { key: 'aov',      label: 'Avg Order Value',  value: '£142',   change: '+5% vs baseline', negative: false, color: 'blue'  },
 ]
 
-const promoKpiCards = [
-  { label: 'Revenue Lift',      value: '+£28.4K', change: '+8.2% vs target',    negative: false, color: 'green' },
-  { label: 'Incremental Units', value: '+12,420', change: '+3.4% vs target',    negative: false, color: 'blue'  },
-  { label: 'Conversion Rate',   value: '3.2%',    change: '+0.4% vs last promo', negative: false, color: 'amber' },
-  { label: 'Avg Order Value',   value: '£142',    change: '+12% vs base',        negative: false, color: 'green' },
+const ALL_PROMO_KPIS = [
+  { key: 'revLift',  label: 'Revenue Lift',      value: '+£28.4K', change: '+8.2% vs target',     negative: false, color: 'green' },
+  { key: 'units',    label: 'Incremental Units', value: '+12,420', change: '+3.4% vs target',     negative: false, color: 'blue'  },
+  { key: 'conv',     label: 'Conversion Rate',   value: '3.2%',    change: '+0.4% vs last promo', negative: false, color: 'amber' },
+  { key: 'aov',      label: 'Avg Order Value',   value: '£142',    change: '+12% vs base',        negative: false, color: 'green' },
+  { key: 'margin',   label: 'Avg Margin',        value: '30.3%',   change: '-2% vs target',       negative: true,  color: 'amber' },
+  { key: 'sellThru', label: 'Sell-Through',      value: '65%',     change: '-10% vs target',      negative: true,  color: 'green' },
 ]
 
-const markdownZeroKpis = [
-  { label: 'Avg Margin',       value: '—', change: null, color: 'slate' },
-  { label: 'Avg Sell-Through', value: '—', change: null, color: 'slate' },
-  { label: 'Avg Cover',        value: '—', change: null, color: 'slate' },
-  { label: 'Total Revenue',    value: '—', change: null, color: 'slate' },
-]
-
-const promoZeroKpis = [
-  { label: 'Revenue Lift',      value: '—', change: null, color: 'slate' },
-  { label: 'Incremental Units', value: '—', change: null, color: 'slate' },
-  { label: 'Conversion Rate',   value: '—', change: null, color: 'slate' },
-  { label: 'Avg Order Value',   value: '—', change: null, color: 'slate' },
-]
-
-const endKpiCards = [
-  { label: 'Avg Margin',    value: '32%',   change: '-6pp vs target',     negative: true, color: 'amber' },
-  { label: 'Sell-Through',  value: '54%',   change: '-18pp vs target',    negative: true, color: 'amber' },
-  { label: 'Total Revenue', value: '£186K', change: '-34% vs plan',       negative: true, color: 'blue'  },
-  { label: 'Stock at Cost', value: '£840K', change: '£620K still exposed', negative: true, color: 'red', warning: 'High exposure' },
+const ALL_END_KPIS = [
+  { key: 'margin',    label: 'Avg Margin',    value: '32%',   change: '-6pp vs target',      negative: true, color: 'amber' },
+  { key: 'sellThru',  label: 'Sell-Through',  value: '54%',   change: '-18pp vs target',     negative: true, color: 'amber' },
+  { key: 'revenue',   label: 'Total Revenue', value: '£186K', change: '-34% vs plan',        negative: true, color: 'blue'  },
+  { key: 'stockCost', label: 'Stock at Cost', value: '£840K', change: '£620K still exposed', negative: true, color: 'red', warning: 'High exposure' },
+  { key: 'units',     label: 'Units Cleared', value: '4,820', change: '-12% vs plan',        negative: true, color: 'slate' },
 ]
 
 // ---------------------------------------------------------------------------
@@ -401,6 +398,24 @@ const LIVE_CAT_PERF = [
   { id: 2, name: 'Knitwear',         sellThrough: 84, target: 80, marginK: 4,   units: 890,   status: 'on-track', insight: 'On track — 4pp above sell-through target' },
   { id: 4, name: 'Tops & Blouses',   sellThrough: 91, target: 85, marginK: 11,  units: 3400,  status: 'on-track', insight: 'Outperforming plan — 6pp above target' },
   { id: 7, name: 'Accessories',      sellThrough: 88, target: 80, marginK: 7,   units: 4200,  status: 'on-track', insight: 'Outperforming plan — 8pp above target' },
+]
+
+const LIVE_PROD_PERF = [
+  { id: 1,  name: 'Wool Blend Overcoat',       category: 'Coats & Jackets',  sellThrough: 92, target: 80, marginPct: 48, revenueK: 18.4 },
+  { id: 2,  name: 'Slim Fit Chinos',            category: 'Trousers & Jeans', sellThrough: 89, target: 80, marginPct: 52, revenueK: 14.2 },
+  { id: 3,  name: 'Floral Midi Dress',          category: 'Dresses',          sellThrough: 87, target: 80, marginPct: 61, revenueK: 22.1 },
+  { id: 4,  name: 'Cashmere Crew Neck',         category: 'Knitwear',         sellThrough: 85, target: 80, marginPct: 44, revenueK: 19.8 },
+  { id: 5,  name: 'Linen Button-Down Shirt',    category: 'Tops & Blouses',   sellThrough: 83, target: 80, marginPct: 56, revenueK: 11.3 },
+  { id: 6,  name: 'Leather Ankle Boot',         category: 'Footwear',         sellThrough: 81, target: 75, marginPct: 38, revenueK: 26.5 },
+  { id: 7,  name: 'Pleated Wide-Leg Trousers',  category: 'Trousers & Jeans', sellThrough: 78, target: 80, marginPct: 49, revenueK: 13.1 },
+  { id: 8,  name: 'Printed Wrap Blouse',        category: 'Tops & Blouses',   sellThrough: 76, target: 80, marginPct: 53, revenueK: 8.9  },
+  { id: 9,  name: 'Chunky Knit Cardigan',       category: 'Knitwear',         sellThrough: 73, target: 80, marginPct: 41, revenueK: 12.4 },
+  { id: 10, name: 'Suede Chelsea Boot',         category: 'Footwear',         sellThrough: 71, target: 75, marginPct: 35, revenueK: 21.0 },
+  { id: 11, name: 'Padded Quilted Jacket',      category: 'Coats & Jackets',  sellThrough: 68, target: 80, marginPct: 32, revenueK: 15.7 },
+  { id: 12, name: 'Slim Straight Jeans',        category: 'Trousers & Jeans', sellThrough: 64, target: 80, marginPct: 28, revenueK: 9.5  },
+  { id: 13, name: 'Satin Slip Dress',           category: 'Dresses',          sellThrough: 61, target: 80, marginPct: 45, revenueK: 7.8  },
+  { id: 14, name: 'Ribbed Roll-Neck Jumper',    category: 'Knitwear',         sellThrough: 57, target: 80, marginPct: 22, revenueK: 6.2  },
+  { id: 15, name: 'Embroidered Canvas Trainer', category: 'Footwear',         sellThrough: 51, target: 75, marginPct: 18, revenueK: 5.1  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -796,27 +811,25 @@ function CompletedSummary({ campaignType }) {
 // PerformanceChart
 // ---------------------------------------------------------------------------
 
-function PerformanceChart({ campaignType, isLive = false, onNavigateToCategory }) {
+function PerformanceChart({ campaignType, isLive = false, onNavigateToCategory, hasHits = true }) {
   const metrics = campaignType === 'Promo' ? PROMO_CHART_METRICS : MARKDOWN_CHART_METRICS
   const [selectedMetricKey, setSelectedMetricKey] = useState(metrics[0].key)
   const [compareMetricKey, setCompareMetricKey] = useState(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [compareDropdownOpen, setCompareDropdownOpen] = useState(false)
-  const [catOpen, setCatOpen] = useState(false)
   const [catFilter, setCatFilter] = useState('all')
+  const [prodFilter, setProdFilter] = useState('high')
   const dropdownRef = useRef(null)
   const compareDropdownRef = useRef(null)
-  const catRef = useRef(null)
 
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setDropdownOpen(false)
       if (compareDropdownRef.current && !compareDropdownRef.current.contains(e.target)) setCompareDropdownOpen(false)
-      if (catRef.current && !catRef.current.contains(e.target)) setCatOpen(false)
     }
-    if (dropdownOpen || compareDropdownOpen || catOpen) document.addEventListener('mousedown', handleClickOutside)
+    if (dropdownOpen || compareDropdownOpen) document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [dropdownOpen, compareDropdownOpen, catOpen])
+  }, [dropdownOpen, compareDropdownOpen])
 
   const selectedMetric = metrics.find(m => m.key === selectedMetricKey) || metrics[0]
   const compareMetric  = compareMetricKey ? metrics.find(m => m.key === compareMetricKey) : null
@@ -830,7 +843,7 @@ function PerformanceChart({ campaignType, isLive = false, onNavigateToCategory }
 
   const hasTarget   = chartData.length > 0 && 'target'   in chartData[0]
   const hasBaseline = chartData.length > 0 && 'baseline' in chartData[0]
-  const hitPoints   = chartData.filter(d => d.hitLabel)
+  const hitPoints   = hasHits ? chartData.filter(d => d.hitLabel) : []
   const { unit, mainKey } = selectedMetric
 
   const yFmt = (v, u = unit) => {
@@ -843,7 +856,7 @@ function PerformanceChart({ campaignType, isLive = false, onNavigateToCategory }
   function selectMetric(key) {
     setSelectedMetricKey(key)
     setDropdownOpen(false)
-    if (key === compareMetricKey) setCompareMetricKey(null)
+    if (key === 'categories' || key === 'products' || key === compareMetricKey) setCompareMetricKey(null)
   }
 
   function selectCompare(key) {
@@ -872,111 +885,48 @@ function PerformanceChart({ campaignType, isLive = false, onNavigateToCategory }
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-semibold text-gray-900">Performance</h3>
         <div className="flex items-center gap-2">
-          {/* Categories dropdown — Live only */}
-          {isLive && (
-            <div className="relative" ref={catRef}>
-              <button
-                onClick={() => setCatOpen(o => !o)}
-                className={`flex items-center gap-1.5 text-xs border rounded-lg px-2.5 py-1.5 transition-colors ${
-                  catOpen ? 'border-[#2a44d4] text-[#2a44d4] bg-indigo-50' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <LayoutGrid size={11} /> Categories
-                <ChevronDown size={11} className={`transition-transform ${catOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {catOpen && (
-                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-30 w-[520px]">
-                  {/* Filter tabs */}
-                  <div className="flex items-center gap-1 px-3 pt-3 pb-2 border-b border-gray-100">
-                    {CAT_STATUS_OPTS.map(o => (
-                      <button key={o.value} onClick={() => setCatFilter(o.value)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                          catFilter === o.value ? 'bg-[#2a44d4] text-white' : 'text-gray-500 hover:bg-gray-100'
-                        }`}>
-                        {o.label}
+          {/* Compare control — hidden in categories/products view */}
+          {selectedMetricKey !== 'categories' && selectedMetricKey !== 'products' && (
+            compareMetric ? (
+              <div className="flex items-center gap-1 text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-gray-50">
+                <span className="text-gray-400 font-medium">vs</span>
+                <span className="text-gray-600">{compareMetric.label}</span>
+                <button onClick={() => setCompareMetricKey(null)} className="ml-0.5 text-gray-400 hover:text-gray-600">
+                  <X size={10} />
+                </button>
+              </div>
+            ) : (
+              <div className="relative" ref={compareDropdownRef}>
+                <button
+                  onClick={() => setCompareDropdownOpen(o => !o)}
+                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <Plus size={11} /> Compare
+                </button>
+                {compareDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[140px] py-1">
+                    {metrics.filter(m => m.key !== selectedMetricKey).map(m => (
+                      <button key={m.key} onClick={() => selectCompare(m.key)}
+                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50">
+                        {m.label}
                       </button>
                     ))}
                   </div>
-                  {/* Category list */}
-                  <div className="p-3 grid grid-cols-2 gap-2 max-h-80 overflow-y-auto">
-                    {filteredCats.map(cat => {
-                      const cfg = catStatusCfg[cat.status]
-                      const Icon = cfg.icon
-                      const isUnder = cat.status !== 'on-track'
-                      const marginStr = cat.marginK >= 0 ? `+£${cat.marginK}K` : `-£${Math.abs(cat.marginK)}K`
-                      return (
-                        <button key={cat.id} onClick={() => { setCatOpen(false); onNavigateToCategory?.(cat.name) }}
-                          className="text-left border border-gray-100 rounded-xl p-3 hover:border-[#2a44d4]/40 hover:shadow-sm transition-all group cursor-pointer w-full"
-                        >
-                          <div className="flex items-start justify-between gap-1.5 mb-1">
-                            <span className="text-xs font-semibold text-gray-900">{cat.name}</span>
-                            <span className={`inline-flex items-center gap-0.5 text-[9px] font-semibold border px-1.5 py-0.5 rounded-full flex-shrink-0 ${cfg.cls}`}>
-                              <Icon size={8} /> {cfg.label}
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-gray-400 mb-2 leading-snug">{cat.insight}</p>
-                          <div className="mb-2">
-                            <div className="flex items-center justify-between text-[10px] mb-0.5">
-                              <span className="text-gray-400">Sell-through</span>
-                              <span className={`font-semibold ${isUnder ? 'text-red-500' : 'text-green-600'}`}>
-                                {cat.sellThrough}%<span className="text-gray-300 font-normal"> / {cat.target}%</span>
-                              </span>
-                            </div>
-                            <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full ${cat.status === 'critical' ? 'bg-red-400' : cat.status === 'warning' ? 'bg-amber-400' : 'bg-green-400'}`}
-                                style={{ width: `${cat.sellThrough}%` }} />
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 text-[10px]">
-                            <span className="text-gray-400">Margin <span className={`font-semibold ${cat.marginK >= 0 ? 'text-gray-700' : 'text-red-500'}`}>{marginStr}</span></span>
-                            <span className="text-gray-200">|</span>
-                            <span className="text-gray-400">Units <span className="font-semibold text-gray-700">{cat.units.toLocaleString()}</span></span>
-                            <ChevronRight size={11} className="text-[#2a44d4] ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          {/* Compare control */}
-          {compareMetric ? (
-            <div className="flex items-center gap-1 text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-gray-50">
-              <span className="text-gray-400 font-medium">vs</span>
-              <span className="text-gray-600">{compareMetric.label}</span>
-              <button onClick={() => setCompareMetricKey(null)} className="ml-0.5 text-gray-400 hover:text-gray-600">
-                <X size={10} />
-              </button>
-            </div>
-          ) : (
-            <div className="relative" ref={compareDropdownRef}>
-              <button
-                onClick={() => setCompareDropdownOpen(o => !o)}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <Plus size={11} /> Compare
-              </button>
-              {compareDropdownOpen && (
-                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[140px] py-1">
-                  {metrics.filter(m => m.key !== selectedMetricKey).map(m => (
-                    <button key={m.key} onClick={() => selectCompare(m.key)}
-                      className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50">
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )
           )}
           {/* Primary dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(o => !o)}
-              className="flex items-center gap-1 text-xs text-gray-600 border border-gray-200 rounded-lg px-2.5 py-1.5 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-2.5 py-1.5 hover:bg-gray-50 transition-colors"
             >
-              {selectedMetric.label}
+              {selectedMetricKey === 'categories' ? (
+                <><LayoutGrid size={11} /> Categories</>
+              ) : selectedMetricKey === 'products' ? (
+                <><Package size={11} /> Products</>
+              ) : selectedMetric.label}
               <ChevronDown size={11} className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             {dropdownOpen && (
@@ -989,12 +939,220 @@ function PerformanceChart({ campaignType, isLive = false, onNavigateToCategory }
                     {m.label}
                   </button>
                 ))}
+                {isLive && (
+                  <>
+                    <div className="my-1 border-t border-gray-100" />
+                    <button onClick={() => selectMetric('categories')}
+                      className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center gap-2 ${
+                        selectedMetricKey === 'categories' ? 'bg-[#2a44d4]/5 text-[#2a44d4] font-medium' : 'text-gray-700 hover:bg-gray-50'
+                      }`}>
+                      <LayoutGrid size={11} /> Categories
+                    </button>
+                    <button onClick={() => selectMetric('products')}
+                      className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center gap-2 ${
+                        selectedMetricKey === 'products' ? 'bg-[#2a44d4]/5 text-[#2a44d4] font-medium' : 'text-gray-700 hover:bg-gray-50'
+                      }`}>
+                      <Package size={11} /> Products
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
 
+      {/* Categories view — replaces chart entirely */}
+      {selectedMetricKey === 'categories' && (
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex items-center gap-1 mb-3">
+            {CAT_STATUS_OPTS.map(o => (
+              <button key={o.value} onClick={() => setCatFilter(o.value)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                  catFilter === o.value ? 'bg-[#2a44d4] text-white' : 'text-gray-500 hover:bg-gray-100'
+                }`}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto grid grid-cols-2 gap-2 content-start">
+            {filteredCats.map(cat => {
+              const cfg = catStatusCfg[cat.status]
+              const Icon = cfg.icon
+              const isUnder = cat.status !== 'on-track'
+              const marginStr = cat.marginK >= 0 ? `+£${cat.marginK}K` : `-£${Math.abs(cat.marginK)}K`
+              return (
+                <button key={cat.id} onClick={() => onNavigateToCategory?.(cat.name)}
+                  className="text-left border border-gray-100 rounded-xl p-3 hover:border-[#2a44d4]/40 hover:shadow-sm transition-all group cursor-pointer w-full"
+                >
+                  <div className="flex items-start justify-between gap-1.5 mb-1">
+                    <span className="text-xs font-semibold text-gray-900">{cat.name}</span>
+                    <span className={`inline-flex items-center gap-0.5 text-[9px] font-semibold border px-1.5 py-0.5 rounded-full flex-shrink-0 ${cfg.cls}`}>
+                      <Icon size={8} /> {cfg.label}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-gray-400 mb-2 leading-snug">{cat.insight}</p>
+                  <div className="mb-2">
+                    <div className="flex items-center justify-between text-[10px] mb-0.5">
+                      <span className="text-gray-400">Sell-through</span>
+                      <span className={`font-semibold ${isUnder ? 'text-red-500' : 'text-green-600'}`}>
+                        {cat.sellThrough}%<span className="text-gray-300 font-normal"> / {cat.target}%</span>
+                      </span>
+                    </div>
+                    <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${cat.status === 'critical' ? 'bg-red-400' : cat.status === 'warning' ? 'bg-amber-400' : 'bg-green-400'}`}
+                        style={{ width: `${cat.sellThrough}%` }} />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px]">
+                    <span className="text-gray-400">Margin <span className={`font-semibold ${cat.marginK >= 0 ? 'text-gray-700' : 'text-red-500'}`}>{marginStr}</span></span>
+                    <span className="text-gray-200">|</span>
+                    <span className="text-gray-400">Units <span className="font-semibold text-gray-700">{cat.units.toLocaleString()}</span></span>
+                    <ChevronRight size={11} className="text-[#2a44d4] ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Products view — replaces chart entirely */}
+      {selectedMetricKey === 'products' && (() => {
+        const sorted = [...LIVE_PROD_PERF].sort((a, b) =>
+          prodFilter === 'high' ? b.sellThrough - a.sellThrough : a.sellThrough - b.sellThrough
+        ).slice(0, 10)
+        return (
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div className="flex items-center gap-1.5 mb-3">
+              <button
+                onClick={() => setProdFilter('high')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                  prodFilter === 'high' ? 'bg-green-500 text-white' : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                <TrendingUp size={10} /> Top performers
+              </button>
+              <button
+                onClick={() => setProdFilter('low')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                  prodFilter === 'low' ? 'bg-red-500 text-white' : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                <TrendingDown size={10} /> Low performers
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5">
+              {sorted.map((p, i) => {
+                const isAbove = p.sellThrough >= p.target
+                const diff = p.sellThrough - p.target
+                return (
+                  <div key={p.id} className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl border border-gray-100 hover:border-[#2a44d4]/30 hover:shadow-sm transition-all group cursor-pointer">
+                    <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0 ${
+                      i < 3 && prodFilter === 'high' ? 'bg-green-100 text-green-700' :
+                      i < 3 && prodFilter === 'low' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'
+                    }`}>{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-xs font-semibold text-gray-900 truncate">{p.name}</span>
+                        <span className={`text-[10px] font-bold flex-shrink-0 ${isAbove ? 'text-green-600' : 'text-red-500'}`}>
+                          {diff >= 0 ? '+' : ''}{diff}pp
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${isAbove ? 'bg-green-400' : prodFilter === 'low' ? 'bg-red-400' : 'bg-amber-400'}`}
+                            style={{ width: `${p.sellThrough}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-gray-500 flex-shrink-0 w-16 text-right">
+                          <span className={`font-semibold ${isAbove ? 'text-green-700' : 'text-red-500'}`}>{p.sellThrough}%</span>
+                          <span className="text-gray-300"> / {p.target}%</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400">
+                        <span>{p.category}</span>
+                        <span className="text-gray-200">|</span>
+                        <span>Rev <span className="font-medium text-gray-600">£{p.revenueK}K</span></span>
+                        <span className="text-gray-200">|</span>
+                        <span>Margin <span className="font-medium text-gray-600">{p.marginPct}%</span></span>
+                        <ChevronRight size={10} className="text-[#2a44d4] ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Chart view — no data state */}
+      {selectedMetricKey !== 'categories' && selectedMetricKey !== 'products' && !hasHits && (
+        <>
+          <div className="flex items-start gap-1.5 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 mb-3">
+            <Info size={11} className="text-gray-400 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-gray-500 leading-snug">
+              Your plan is shown below. Actuals start appearing once campaign activity is recorded — updates daily.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 mb-3">
+            {hasTarget && (
+              <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                <span className="w-6 inline-block border-t-2 border-dashed border-gray-300" /> Plan
+              </span>
+            )}
+            <span className="flex items-center gap-1.5 text-xs text-gray-300">
+              <span className="w-6 inline-block border-t-2 border-dashed border-gray-200" /> Actuals (pending)
+            </span>
+          </div>
+
+          <div className="flex-1 min-h-0 relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart
+                data={chartData.map(pt => ({ week: pt.week, target: pt.target ?? 0 }))}
+                margin={{ top: 5, right: 5, left: -15, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="ghostGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f3f4f6" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#f9fafb" stopOpacity={0.3} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" stroke="#f5f5f5" vertical={false} />
+                <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: '#d1d5db', fontSize: 11 }} />
+                <YAxis yAxisId="left" tickFormatter={v => yFmt(v)} axisLine={false} tickLine={false} tick={{ fill: '#d1d5db', fontSize: 11 }} />
+                {hasTarget && (
+                  <Area
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="target"
+                    stroke="#d1d5db"
+                    strokeWidth={1.5}
+                    strokeDasharray="5 4"
+                    fill="url(#ghostGrad)"
+                    dot={false}
+                    name="Plan"
+                  />
+                )}
+              </ComposedChart>
+            </ResponsiveContainer>
+            {/* No-data overlay */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-white/90 border border-gray-100 rounded-xl px-4 py-2.5 text-center shadow-sm">
+                <p className="text-xs font-semibold text-gray-500 mb-0.5">No actuals yet</p>
+                <p className="text-[11px] text-gray-400">Create a hit to begin tracking performance</p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Chart view — live data */}
+      {selectedMetricKey !== 'categories' && selectedMetricKey !== 'products' && hasHits && (
+        <>
       {/* Micro-insight */}
       {microInsight && (
         <div className="flex items-start gap-1.5 bg-blue-50 rounded-lg px-3 py-2 mb-3">
@@ -1114,6 +1272,8 @@ function PerformanceChart({ campaignType, isLive = false, onNavigateToCategory }
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+        </>
+      )}
     </div>
   )
 }
@@ -1181,11 +1341,388 @@ function BrandBreakdown({ brands }) {
 }
 
 // ---------------------------------------------------------------------------
+// AIRiskBrief — zero-hits live campaign empty state
+// ---------------------------------------------------------------------------
+
+function AIRiskBrief({ onCreateHit }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
+      {/* AI header */}
+      <div className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-50 to-indigo-50 border-b border-violet-100">
+        <Sparkles size={12} className="text-violet-600 flex-shrink-0" />
+        <span className="text-xs font-semibold text-violet-700 uppercase tracking-wide">AI brief</span>
+        <span className="text-violet-300 mx-0.5">·</span>
+        <span className="text-xs text-violet-500">No hits yet — action recommended</span>
+      </div>
+
+      <div className="flex flex-col flex-1 px-5 py-4 gap-4">
+        {/* Risk statement */}
+        <div>
+          <div className="flex items-start gap-2.5 mb-2.5">
+            <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <AlertTriangle size={11} className="text-amber-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900 mb-0.5 leading-snug">
+                At current pace, sell-through will land at 61% — 11pp below your 72% target
+              </p>
+              <p className="text-xs text-gray-400 leading-snug">
+                Coats &amp; Jackets and Footwear are the main drag, tracking 15–20pp behind plan.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+            <Clock size={11} className="text-amber-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-700 leading-snug">
+              <strong>Best window for Hit 1 closes in ~3 days.</strong> Waiting past Week 3 typically costs 8–12% in clearance velocity based on similar campaigns.
+            </p>
+          </div>
+        </div>
+
+        {/* Recommended hit */}
+        <div>
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Recommended first hit</p>
+          <div className="border border-indigo-100 bg-indigo-50/40 rounded-xl p-3.5">
+            <div className="flex items-start justify-between gap-2 mb-2.5">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Hit 1 · 15% off</p>
+                <p className="text-xs text-gray-500 mt-0.5">Coats &amp; Jackets, Footwear, Dresses</p>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-violet-700 bg-violet-100 border border-violet-200 px-2 py-0.5 rounded-full flex-shrink-0">
+                <Sparkles size={8} /> AI recommended
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-2.5">
+              {[
+                { label: 'sell-through', value: '+13pp', positive: true },
+                { label: 'revenue',      value: '+£22K', positive: true },
+                { label: 'margin',       value: '−4pp',  positive: false },
+              ].map(m => (
+                <div key={m.label} className="bg-white rounded-lg py-2 text-center">
+                  <p className={`text-xs font-bold ${m.positive ? 'text-green-600' : 'text-red-500'}`}>{m.value}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{m.label}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-400">Based on 4 similar SS campaigns · High confidence</p>
+          </div>
+        </div>
+
+        {/* CTAs */}
+        <div className="flex items-center gap-2 mt-auto">
+          <button
+            onClick={onCreateHit}
+            className="flex-1 flex items-center justify-center gap-1.5 bg-[#2a44d4] hover:bg-[#2438b8] text-white text-xs font-semibold py-2.5 rounded-lg transition-colors"
+          >
+            <Sparkles size={11} /> Apply recommendation
+          </button>
+          <button
+            onClick={onCreateHit}
+            className="flex-1 flex items-center justify-center gap-1.5 border border-gray-200 text-gray-600 text-xs font-medium py-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Plus size={11} /> Create custom hit
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// HitCampaignView
+// ---------------------------------------------------------------------------
+
+const HIT_PRODUCT_MOCK = [
+  { id: 1, name: 'Wool Blend Overcoat',  category: 'Coats & Jackets', was: '£220', now: '£176', sellThrough: 92 },
+  { id: 2, name: 'Quilted Parka',        category: 'Coats & Jackets', was: '£185', now: '£148', sellThrough: 74 },
+  { id: 3, name: 'Slim Fit Chinos',      category: 'Trousers',        was: '£95',  now: '£76',  sellThrough: 68 },
+  { id: 4, name: 'Merino Crew Neck',     category: 'Knitwear',        was: '£110', now: '£88',  sellThrough: 55 },
+  { id: 5, name: 'Technical Rain Jacket',category: 'Outerwear',       was: '£165', now: '£115', sellThrough: 41 },
+]
+
+function HitCampaignView({ timelineHit, campaignHit, campaignName, timelineHits = [], onClose, onCreateSubHit }) {
+  const [activeTab, setActiveTab] = useState('Products & Categories')
+
+  const name        = campaignHit?.name || timelineHit?.label || 'Hit'
+  const status      = campaignHit?.status || timelineHit?.status
+  const subHits     = timelineHit?.children || []
+  const isDraft     = status === 'Draft' || status === 'Planned'
+  const isLive      = status === 'Live'
+  const isCompleted = status === 'Completed'
+
+  const accentColor = isLive ? 'bg-orange-400' : isCompleted ? 'bg-green-500' : 'bg-gray-200'
+  const tabs = ['Products & Categories', 'Settings']
+
+  return (
+    <div className="fixed inset-0 z-50 bg-white flex flex-col">
+      {/* Status accent line */}
+      <div className={`h-0.5 w-full shrink-0 ${accentColor}`} />
+
+      {/* Header */}
+      <div className="flex items-center gap-3 px-6 py-3.5 border-b border-gray-100 shrink-0">
+        <button
+          onClick={onClose}
+          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors shrink-0"
+        >
+          <ArrowLeft size={15} />
+          <span>{campaignName || 'Campaign'}</span>
+        </button>
+        <ChevronRight size={14} className="text-gray-300 shrink-0" />
+        <span className="text-sm font-semibold text-gray-900 flex-1 truncate">{name}</span>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <HitStatusBadge status={status} />
+          {campaignHit?.discount && <span className="text-xs text-gray-400">{campaignHit.discount}</span>}
+          {campaignHit?.daysLeft && (
+            <span className="flex items-center gap-1 text-xs font-medium text-orange-500">
+              <Clock size={10} />{campaignHit.daysLeft}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 ml-3 shrink-0">
+          <button
+            onClick={onCreateSubHit}
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#2a44d4] border border-[#2a44d4]/30 rounded-lg px-3 py-1.5 hover:bg-[#2a44d4]/5 transition-colors"
+          >
+            <Plus size={12} /> Create sub-hit
+          </button>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center px-6 border-b border-gray-100 shrink-0">
+        {tabs.map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === tab
+                ? 'border-[#2a44d4] text-[#2a44d4]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="max-w-5xl mx-auto px-8 py-6 space-y-4">
+
+          {/* ── PRODUCTS & CATEGORIES ── */}
+          {activeTab === 'Products & Categories' && (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              {isDraft ? (
+                <div className="p-14 text-center">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Package size={20} className="text-gray-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-gray-700 mb-1">No products assigned yet</p>
+                  <p className="text-xs text-gray-400 mb-5">Add products to this hit to start setting markdowns.</p>
+                  <button className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2a44d4] border border-[#2a44d4]/30 rounded-xl px-4 py-2.5 hover:bg-[#2a44d4]/5 transition-colors">
+                    <Plus size={13} /> Add products
+                  </button>
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50/60">
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Product</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Category</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Was</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Now</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Sell-through</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {HIT_PRODUCT_MOCK.map((p, i) => (
+                      <tr key={p.id} className={`hover:bg-gray-50 transition-colors ${i < HIT_PRODUCT_MOCK.length - 1 ? 'border-b border-gray-50' : ''}`}>
+                        <td className="px-5 py-3.5 font-medium text-gray-900">{p.name}</td>
+                        <td className="px-5 py-3.5 text-gray-500">{p.category}</td>
+                        <td className="px-5 py-3.5 text-gray-400 line-through">{p.was}</td>
+                        <td className="px-5 py-3.5 font-semibold text-gray-900">{p.now}</td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full bg-[#2a44d4]" style={{ width: `${p.sellThrough}%` }} />
+                            </div>
+                            <span className="text-xs font-medium text-gray-700">{p.sellThrough}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* ── SETTINGS ── */}
+          {activeTab === 'Settings' && (
+            <>
+              {isDraft && (
+                <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                  <AlertTriangle size={14} className="text-amber-500 shrink-0" />
+                  <p className="text-sm text-amber-700">This hit is in Draft. Settings can be edited before it goes live.</p>
+                </div>
+              )}
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <p className="text-sm font-semibold text-gray-900 mb-5">Hit Configuration</p>
+                <div className="grid grid-cols-2 gap-x-12 gap-y-5">
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1.5">Status</p>
+                    <HitStatusBadge status={status} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1.5">Discount</p>
+                    <p className="text-sm font-medium text-gray-900">{campaignHit?.discount || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1.5">Categories</p>
+                    <p className="text-sm font-medium text-gray-900">{campaignHit?.categories || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1.5">Start date</p>
+                    <p className="text-sm font-medium text-gray-900">{timelineHit?.date || '—'}</p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// HitDetailDrawer (legacy — replaced by HitCampaignView)
+// ---------------------------------------------------------------------------
+
+function HitDetailDrawer({ timelineHit, campaignHit, onClose, onCreateSubHit }) {
+  const name    = campaignHit?.name || timelineHit?.label || 'Hit'
+  const status  = campaignHit?.status || timelineHit?.status
+  const subHits = timelineHit?.children || []
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div
+        className="fixed right-0 top-0 h-screen w-80 bg-white border-l border-gray-200 shadow-2xl z-50 flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-start gap-3 px-4 py-4 border-b border-gray-100">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900 leading-snug">{name}</p>
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+              <HitStatusBadge status={status} />
+              {campaignHit?.discount   && <span className="text-xs text-gray-400">{campaignHit.discount}</span>}
+              {campaignHit?.categories && <span className="text-xs text-gray-400">{campaignHit.categories}</span>}
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors shrink-0 mt-0.5">
+            <X size={14} />
+          </button>
+        </div>
+
+        {(campaignHit?.alert || campaignHit?.missedTarget) && (
+          <div className="px-4 py-3 space-y-1.5 border-b border-gray-100">
+            {[campaignHit.alert, campaignHit.missedTarget].filter(Boolean).map((msg, i) => (
+              <div key={i} className="flex items-start gap-1.5 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5">
+                <AlertTriangle size={10} className="text-amber-500 shrink-0 mt-0.5" />
+                <span className="text-xs text-amber-700 leading-snug">{msg}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {campaignHit && (campaignHit.sellThrough || campaignHit.revenue || campaignHit.units) && (
+          <div className="px-4 py-4 border-b border-gray-100">
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Performance</p>
+            <div className="space-y-3">
+              {campaignHit.sellThrough && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs text-gray-500">Sell-through</span>
+                    <span className="text-xs font-bold text-gray-900">{campaignHit.sellThrough}</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#2a44d4] rounded-full" style={{ width: campaignHit.sellThrough }} />
+                  </div>
+                </div>
+              )}
+              {campaignHit.revenue && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">Revenue</span>
+                  <span className="text-xs font-bold text-gray-900">{campaignHit.revenue}</span>
+                </div>
+              )}
+              {campaignHit.units && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">Units sold</span>
+                  <span className="text-xs font-semibold text-gray-700">{campaignHit.units}</span>
+                </div>
+              )}
+              {campaignHit.daysLeft && (
+                <div className="flex items-center gap-1">
+                  <Clock size={10} className="text-orange-500" />
+                  <span className="text-xs font-medium text-orange-500">{campaignHit.daysLeft}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="px-4 py-4 flex-1 overflow-y-auto">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            Sub-hits {subHits.length > 0 ? `(${subHits.length})` : ''}
+          </p>
+          {subHits.length > 0 ? (
+            <div className="space-y-2">
+              {subHits.map(sub => (
+                <div key={sub.id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors cursor-pointer">
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${
+                    sub.status === 'Completed' ? 'bg-[#2a44d4]' :
+                    sub.status === 'Live'      ? 'bg-orange-400' : 'bg-gray-300'
+                  }`} />
+                  <span className="text-xs font-medium text-gray-700 flex-1">{sub.label}</span>
+                  <HitStatusBadge status={sub.status} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400">No sub-hits created yet.</p>
+          )}
+        </div>
+
+        <div className="px-4 py-4 border-t border-gray-100">
+          <button
+            onClick={onCreateSubHit}
+            className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-[#2a44d4] border border-[#2a44d4]/30 rounded-xl py-2.5 hover:bg-[#2a44d4]/5 transition-colors"
+          >
+            <Plus size={12} /> Create sub-hit
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // CampaignHitsPanel
 // ---------------------------------------------------------------------------
 
-function CampaignHitsPanel({ hits = [], isMultiBrand = false }) {
+function CampaignHitsPanel({ hits = [], isMultiBrand = false, onHitClick }) {
   const [sort, setSort] = useState('Most recent')
+
+  const liveHits      = hits.filter(h => h.status === 'Live')
+  const draftHits     = hits.filter(h => h.status === 'Draft' || h.status === 'Planned')
+  const completedHits = hits.filter(h => h.status === 'Completed')
+  const hasGroups     = [liveHits, draftHits, completedHits].filter(g => g.length > 0).length > 1
 
   const summaryItems = isMultiBrand
     ? [
@@ -1200,6 +1737,73 @@ function CampaignHitsPanel({ hits = [], isMultiBrand = false }) {
         { label: 'Contribution to Target',        value: '11.8%+', green: true },
       ]
 
+  function HitCard({ hit }) {
+    const isDraft = hit.status === 'Draft' || hit.status === 'Planned'
+    return (
+      <div
+        onClick={() => onHitClick?.(hit)}
+        className={`rounded-xl p-3 cursor-pointer transition-colors ${
+          isDraft
+            ? 'border border-dashed border-gray-200 bg-gray-50/40 hover:border-gray-300 hover:bg-gray-50'
+            : 'border border-gray-100 hover:border-gray-200'
+        }`}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+              <span className={`text-sm font-semibold ${isDraft ? 'text-gray-500' : 'text-gray-900'}`}>{hit.name}</span>
+              <span className="text-xs text-gray-400">• {hit.discount}</span>
+              <span className="text-xs text-gray-400">• {hit.categories}</span>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <HitStatusBadge status={hit.status} />
+              {hit.recommended && <span className="text-xs text-violet-600">✦ AI recommended</span>}
+              {hit.alert && (
+                <span className="flex items-center gap-0.5 text-xs text-amber-600">
+                  <Clock size={9} /> {hit.alert}
+                </span>
+              )}
+              {hit.daysLeft     && <span className="text-xs text-orange-500">{hit.daysLeft}</span>}
+              {hit.missedTarget && <span className="text-xs text-amber-600">⚠ {hit.missedTarget}</span>}
+            </div>
+          </div>
+          <ChevronRight size={15} className="text-gray-400 shrink-0 mt-0.5" />
+        </div>
+
+        {!isDraft && (isMultiBrand ? (
+          <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t border-gray-50 text-xs">
+            <div><span className="text-gray-400">Sell-through</span><br /><span className="font-medium text-gray-700">{hit.sellThrough ?? '—'}</span></div>
+            <div><span className="text-gray-400">Revenue</span><br /><span className="font-medium text-gray-700">{hit.revenue ?? '—'}</span></div>
+            <div><span className="text-gray-400">Margin</span><br /><span className="font-medium text-gray-700">{hit.margin ?? '—'}</span></div>
+            <div><span className="text-gray-400">Stock at cost</span><br /><span className="font-medium text-gray-700">{hit.stockAtCost ?? '—'}</span></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t border-gray-50 text-xs">
+            <div><span className="text-gray-400">Sell-through</span><br /><span className="font-medium text-gray-700">{hit.sellThrough ?? '—'}</span></div>
+            <div><span className="text-gray-400">Revenue</span><br /><span className="font-medium text-gray-700">{hit.revenue ?? '—'}</span></div>
+            <div className="col-span-2"><span className="text-gray-400">Units</span><br /><span className="font-medium text-gray-700">{hit.units}</span></div>
+          </div>
+        ))}
+
+        {isMultiBrand && !isDraft && hit.brands?.length > 0 && (
+          <BrandBreakdown brands={hit.brands} />
+        )}
+      </div>
+    )
+  }
+
+  function Section({ label, count, children }) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
+          {count != null && <span className="text-[10px] text-gray-400">{count} draft{count !== 1 ? 's' : ''}</span>}
+        </div>
+        <div className="space-y-2">{children}</div>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex items-center justify-between mb-4">
@@ -1209,8 +1813,7 @@ function CampaignHitsPanel({ hits = [], isMultiBrand = false }) {
         </button>
       </div>
 
-      {/* Summary */}
-      <div className={`grid gap-2 bg-gray-50 rounded-lg p-3 mb-3 ${isMultiBrand ? 'grid-cols-4' : 'grid-cols-3'}`}>
+      <div className={`grid gap-2 bg-gray-50 rounded-lg p-3 mb-4 ${isMultiBrand ? 'grid-cols-4' : 'grid-cols-3'}`}>
         {summaryItems.map(s => (
           <div key={s.label}>
             <div className="text-xs text-gray-400 mb-0.5 leading-tight">{s.label}</div>
@@ -1219,52 +1822,29 @@ function CampaignHitsPanel({ hits = [], isMultiBrand = false }) {
         ))}
       </div>
 
-      <div className="space-y-2">
-        {hits.map(hit => (
-          <div key={hit.id} className="border border-gray-100 rounded-lg p-3 hover:border-gray-200 cursor-pointer transition-colors">
-            <div className="flex items-start justify-between">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                  <span className="text-sm font-semibold text-gray-900">{hit.name}</span>
-                  <span className="text-xs text-gray-400">• {hit.discount}</span>
-                  <span className="text-xs text-gray-400">• {hit.categories}</span>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <HitStatusBadge status={hit.status} />
-                  {hit.recommended && <span className="text-xs text-violet-600">✦ AI recommended</span>}
-                  {hit.alert && (
-                    <span className="flex items-center gap-0.5 text-xs text-amber-600">
-                      <Clock size={9} /> {hit.alert}
-                    </span>
-                  )}
-                  {hit.daysLeft && <span className="text-xs text-orange-500">{hit.daysLeft}</span>}
-                  {hit.missedTarget && <span className="text-xs text-amber-600">⚠ {hit.missedTarget}</span>}
-                </div>
-              </div>
-              <ChevronRight size={15} className="text-gray-400 shrink-0 mt-0.5" />
-            </div>
-
-            {isMultiBrand ? (
-              <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t border-gray-50 text-xs">
-                <div><span className="text-gray-400">Sell-through</span><br /><span className="font-medium text-gray-700">{hit.sellThrough ?? '—'}</span></div>
-                <div><span className="text-gray-400">Revenue</span><br /><span className="font-medium text-gray-700">{hit.revenue ?? '—'}</span></div>
-                <div><span className="text-gray-400">Margin</span><br /><span className="font-medium text-gray-700">{hit.margin ?? '—'}</span></div>
-                <div><span className="text-gray-400">Stock at cost</span><br /><span className="font-medium text-gray-700">{hit.stockAtCost ?? '—'}</span></div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t border-gray-50 text-xs text-gray-500">
-                <div><span className="text-gray-400">Sell-through</span><br /><span className="font-medium text-gray-700">{hit.sellThrough ?? '—'}</span></div>
-                <div><span className="text-gray-400">Revenue</span><br /><span className="font-medium text-gray-700">{hit.revenue ?? '—'}</span></div>
-                <div className="col-span-2"><span className="text-gray-400">Units</span><br /><span className="font-medium text-gray-700">{hit.units}</span></div>
-              </div>
-            )}
-
-            {isMultiBrand && hit.brands?.length > 0 && (
-              <BrandBreakdown brands={hit.brands} />
-            )}
-          </div>
-        ))}
-      </div>
+      {hasGroups ? (
+        <div className="space-y-4">
+          {liveHits.length > 0 && (
+            <Section label="Active">
+              {liveHits.map(h => <HitCard key={h.id} hit={h} />)}
+            </Section>
+          )}
+          {draftHits.length > 0 && (
+            <Section label="Upcoming" count={draftHits.length}>
+              {draftHits.map(h => <HitCard key={h.id} hit={h} />)}
+            </Section>
+          )}
+          {completedHits.length > 0 && (
+            <Section label="History">
+              {completedHits.map(h => <HitCard key={h.id} hit={h} />)}
+            </Section>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {hits.map(h => <HitCard key={h.id} hit={h} />)}
+        </div>
+      )}
     </div>
   )
 }
@@ -1275,9 +1855,11 @@ function CampaignHitsPanel({ hits = [], isMultiBrand = false }) {
 
 export default function CampaignOverviewTab({
   status,
+  campaignName,
   onNavigateToProducts,
   onNavigateToTab,
   onNavigateToCategory,
+  onCreateHit,
   campaignType,
   timelineHits = [],
   campaignHitsData = [],
@@ -1287,32 +1869,123 @@ export default function CampaignOverviewTab({
   const isCompleted = status === 'Completed'
   const isPreLive   = status === 'Draft' || status === 'Pre-optimisation' || status === 'Optimised'
 
-  const checklistItems = getChecklistItems(status, campaignType)
+  const checklistItems  = getChecklistItems(status, campaignType)
+  const [selectedHitId, setSelectedHitId] = useState(null)
+  const [openHitId,     setOpenHitId]     = useState(null)
+  const [hoveredHitId,  setHoveredHitId]  = useState(null)
+
+  const allKpis = isMultiBrand ? ALL_END_KPIS : (campaignType === 'Promo' ? ALL_PROMO_KPIS : ALL_MARKDOWN_KPIS)
+  const [visibleKpiKeys, setVisibleKpiKeys] = useState(() => new Set(allKpis.slice(0, 4).map(k => k.key)))
+  const [showKpiPanel,   setShowKpiPanel]   = useState(false)
+  const kpiPanelRef = useRef(null)
+
+  useEffect(() => {
+    function handler(e) {
+      if (kpiPanelRef.current && !kpiPanelRef.current.contains(e.target)) setShowKpiPanel(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function toggleKpi(key) {
+    setVisibleKpiKeys(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const expandedHit     = selectedHitId != null ? timelineHits.find(h => h.id === selectedHitId) : null
+  const expandedSubHits = expandedHit?.children || []
+  const openTimelineHit = openHitId != null ? timelineHits.find(h => h.id === openHitId) : null
+  const openCampaignHit = openHitId != null ? campaignHitsData.find(h => h.id === openHitId) : null
+
+  function handleHitClick(hit) {
+    const hitId  = hit.id
+    const isOpen = openHitId === hitId
+    if (isOpen) {
+      setOpenHitId(null); setSelectedHitId(null)
+    } else {
+      setOpenHitId(hitId)
+      const tHit = timelineHits.find(h => h.id === hitId) || hit
+      if (tHit.children?.length > 0) setSelectedHitId(hitId)
+    }
+  }
 
   return (
     <div>
-      {/* KPI cards row */}
-      <div
-        className="grid gap-3 mb-5"
-        style={{ gridTemplateColumns: isLive ? 'repeat(4, 1fr) 1.1fr' : 'repeat(4, 1fr)' }}
-      >
-        {(() => {
-          const cards = isPreLive
-            ? (campaignType === 'Promo' ? promoZeroKpis : markdownZeroKpis)
-            : isMultiBrand
-            ? endKpiCards
-            : (campaignType === 'Promo' ? promoKpiCards : kpiCards)
-          return cards.map((k) => (
-            <StatCard key={k.label} label={k.label} value={k.value} change={k.change} negative={k.negative} color={k.color} warning={k.warning} />
-          ))
-        })()}
-
-        {/* Underperforming Categories — live campaigns only */}
-        {isLive && (
-          <div
-            onClick={() => onNavigateToProducts('underperforming')}
-            className="bg-white rounded-xl border border-l-4 border-gray-200 border-l-red-400 p-4 cursor-pointer hover:border-red-300 hover:shadow-sm transition-all group"
+      {/* KPI row header */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Key metrics</span>
+        <div className="relative" ref={kpiPanelRef}>
+          <button
+            onClick={() => setShowKpiPanel(v => !v)}
+            className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
+              showKpiPanel ? 'border-[#2a44d4] text-[#2a44d4] bg-indigo-50' : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+            }`}
           >
+            <Pencil size={11} />
+            Edit KPIs
+          </button>
+          {showKpiPanel && (
+            <div className="absolute top-full right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-20 w-52 overflow-hidden">
+              <div className="px-3 py-2.5 border-b border-gray-100">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Available KPIs</span>
+              </div>
+              {allKpis.map(k => (
+                <button key={k.key} onClick={() => toggleKpi(k.key)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                  {k.label}
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${visibleKpiKeys.has(k.key) ? 'bg-[#2a44d4] border-[#2a44d4]' : 'border-gray-300'}`}>
+                    {visibleKpiKeys.has(k.key) && <Check size={9} className="text-white" />}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* KPI cards row */}
+      {visibleKpiKeys.size > 0 && (
+        <div
+          className="grid gap-3 mb-5"
+          style={{ gridTemplateColumns: `repeat(${visibleKpiKeys.size}, 1fr)${isLive ? ' 1.1fr' : ''}` }}
+        >
+          {allKpis
+            .filter(k => visibleKpiKeys.has(k.key))
+            .map(k => isPreLive
+              ? <StatCard key={k.key} label={k.label} value="—" change={null} color="slate" />
+              : <StatCard key={k.key} label={k.label} value={k.value} change={k.change} negative={k.negative} color={k.color} warning={k.warning} />
+            )
+          }
+
+          {/* Underperforming Categories — live campaigns only */}
+          {isLive && (
+            <div
+              onClick={() => onNavigateToProducts('underperforming')}
+              className="bg-white rounded-xl border border-l-4 border-gray-200 border-l-red-400 p-4 cursor-pointer hover:border-red-300 hover:shadow-sm transition-all group"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1">
+                  <span className="text-xs font-medium text-gray-500">Underperforming Categories</span>
+                  <Info size={11} className="text-gray-400" />
+                </div>
+                <ArrowUpRight size={13} className="text-[#2a44d4] opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <div className="text-2xl font-bold text-gray-900 leading-tight mb-1">3</div>
+              <div className="flex items-center gap-1 text-xs font-medium text-[#2a44d4]">
+                View categories →
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {visibleKpiKeys.size === 0 && isLive && (
+        <div className="mb-5">
+          <div className="bg-white rounded-xl border border-l-4 border-gray-200 border-l-red-400 p-4 cursor-pointer hover:border-red-300 hover:shadow-sm transition-all group inline-block min-w-[180px]"
+            onClick={() => onNavigateToProducts('underperforming')}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-1">
                 <span className="text-xs font-medium text-gray-500">Underperforming Categories</span>
@@ -1321,12 +1994,10 @@ export default function CampaignOverviewTab({
               <ArrowUpRight size={13} className="text-[#2a44d4] opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <div className="text-2xl font-bold text-gray-900 leading-tight mb-1">3</div>
-            <div className="flex items-center gap-1 text-xs font-medium text-[#2a44d4]">
-              View categories →
-            </div>
+            <div className="flex items-center gap-1 text-xs font-medium text-[#2a44d4]">View categories →</div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Completed summary */}
       {isCompleted && (
@@ -1352,7 +2023,7 @@ export default function CampaignOverviewTab({
         </div>
 
         {/* Timeline */}
-        <div className="relative" style={{ paddingBottom: 56 }}>
+        <div className="relative" style={{ paddingBottom: expandedSubHits.length > 0 ? 104 : isLive && timelineHits.length === 0 ? 32 : 56 }}>
           {/* Week date labels */}
           <div className="flex justify-between text-xs text-gray-400 mb-3">
             {['W1 | 12/02/24', 'W2 | 19/02/24', 'W3 | 28/02/24', 'W4 | 04/03/24'].map(w => (
@@ -1362,46 +2033,107 @@ export default function CampaignOverviewTab({
 
           {/* Track */}
           <div className="relative h-2 bg-gray-100 rounded-full">
-            {/* Progress fill */}
             <div className="absolute left-0 top-0 h-full bg-[#2a44d4] rounded-full transition-all" style={{ width: '50%' }} />
 
-            {/* Hit markers — positioned on the track */}
-            {timelineHits.map(hit => (
-              <div
-                key={hit.id}
-                className="absolute top-1/2 -translate-y-1/2"
-                style={{ left: `${hit.pct}%`, transform: `translateX(-50%) translateY(-50%)` }}
-              >
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center
-                  ${hit.status === 'Completed' ? 'bg-[#2a44d4] border-[#2a44d4]' :
-                    hit.status === 'Live' ? 'bg-orange-400 border-orange-400' :
-                    'bg-white border-gray-300'}`}
+            {timelineHits.map(hit => {
+              const hasChildren = hit.children?.length > 0
+              const isActive    = openHitId === hit.id
+              const isHovered   = hoveredHitId === hit.id
+              return (
+                <button
+                  key={hit.id}
+                  onClick={() => handleHitClick(hit)}
+                  onMouseEnter={() => setHoveredHitId(hit.id)}
+                  onMouseLeave={() => setHoveredHitId(null)}
+                  className="absolute top-1/2 focus:outline-none cursor-pointer"
+                  style={{ left: `${hit.pct}%`, transform: 'translateX(-50%) translateY(-50%)' }}
                 >
-                  {hit.status === 'Completed' && <CheckCircle2 size={8} className="text-white" />}
-                </div>
-              </div>
-            ))}
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-150
+                    ${isActive  ? 'scale-110 ring-2 ring-[#2a44d4]/30 ring-offset-1' :
+                      isHovered ? 'scale-110 ring-2 ring-gray-300 ring-offset-1' : 'scale-100'}
+                    ${hit.status === 'Completed' ? 'bg-[#2a44d4] border-[#2a44d4]' :
+                      hit.status === 'Live'      ? 'bg-orange-400 border-orange-400' :
+                                                   'bg-white border-gray-300'}`}
+                  >
+                    {hit.status === 'Completed' && <CheckCircle2 size={8} className="text-white" />}
+                  </div>
+                  {hasChildren && (
+                    <span className="absolute -top-1.5 -right-2 w-3.5 h-3.5 bg-[#2a44d4] text-white rounded-full text-[7px] font-bold flex items-center justify-center leading-none pointer-events-none">
+                      {hit.children.length}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
 
-          {/* Hit labels — below the track */}
-          {timelineHits.map(hit => (
-            <div
-              key={hit.id}
-              className="absolute text-center"
-              style={{ left: `${hit.pct}%`, transform: 'translateX(-50%)', top: 46 }}
-            >
-              <p className="text-xs font-semibold text-gray-700 whitespace-nowrap">{hit.label}</p>
-              <div className={`text-xs flex items-center justify-center gap-0.5 whitespace-nowrap
-                ${hit.status === 'Completed' ? 'text-green-600' :
-                  hit.status === 'Live' ? 'text-orange-500' :
-                  'text-gray-400'}`}>
-                {hit.status === 'Completed' && <CheckCircle2 size={9} />}
-                {hit.status}
+          {/* Hit labels — draft/planned labels appear only on hover */}
+          {timelineHits.map(hit => {
+            const isDraft     = hit.status === 'Draft' || hit.status === 'Planned'
+            const hasChildren = hit.children?.length > 0
+            const isActive    = openHitId === hit.id
+            const isHovered   = hoveredHitId === hit.id
+            const showLabel   = !isDraft || isHovered || isActive
+            return (
+              <div
+                key={hit.id}
+                onClick={() => handleHitClick(hit)}
+                className={`absolute text-center cursor-pointer transition-opacity duration-150 ${showLabel ? 'opacity-100' : 'opacity-0'}`}
+                style={{ left: `${hit.pct}%`, transform: 'translateX(-50%)', top: 46 }}
+              >
+                <p className={`text-xs font-semibold whitespace-nowrap flex items-center gap-0.5 ${isActive ? 'text-[#2a44d4]' : isDraft ? 'text-gray-400' : 'text-gray-700'}`}>
+                  {hit.label}
+                  {hasChildren && (
+                    <ChevronDown size={10} className={`transition-transform ${selectedHitId === hit.id ? 'rotate-180 text-[#2a44d4]' : 'text-gray-400'}`} />
+                  )}
+                </p>
+                <div className={`text-xs flex items-center justify-center gap-0.5 whitespace-nowrap
+                  ${hit.status === 'Completed' ? 'text-green-600' :
+                    hit.status === 'Live'      ? 'text-orange-500' : 'text-gray-400'}`}>
+                  {hit.status === 'Completed' && <CheckCircle2 size={9} />}
+                  {hit.status}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
 
-          {/* Campaign Launch / Ends */}
+          {/* Sub-hit expansion */}
+          {expandedHit && expandedSubHits.length > 0 && (
+            <>
+              <div className="absolute w-px bg-gray-200" style={{ left: `${expandedHit.pct}%`, top: 40, height: 38 }} />
+              <div className="absolute left-0 right-0" style={{ top: 78 }}>
+                <div className="relative h-px" style={{ backgroundImage: 'repeating-linear-gradient(to right,#d1d5db 0,#d1d5db 6px,transparent 6px,transparent 12px)' }}>
+                  {expandedSubHits.map(sub => (
+                    <div key={sub.id} className="absolute" style={{ left: `${sub.pct}%`, top: '50%', transform: 'translateX(-50%) translateY(-50%)' }}>
+                      <div className={`w-3 h-3 rounded-full border-[1.5px] flex items-center justify-center
+                        ${sub.status === 'Completed' ? 'bg-[#2a44d4] border-[#2a44d4]' :
+                          sub.status === 'Live'      ? 'bg-orange-400 border-orange-400' :
+                                                       'bg-white border-gray-300'}`}>
+                        {sub.status === 'Completed' && <CheckCircle2 size={6} className="text-white" />}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {expandedSubHits.map(sub => (
+                  <div key={sub.id} className="absolute text-center" style={{ left: `${sub.pct}%`, transform: 'translateX(-50%)', top: 8 }}>
+                    <p className="text-[10px] font-medium text-gray-500 whitespace-nowrap">{sub.label}</p>
+                    <div className={`text-[10px] whitespace-nowrap mt-0.5
+                      ${sub.status === 'Completed' ? 'text-green-500' :
+                        sub.status === 'Live'      ? 'text-orange-400' : 'text-gray-300'}`}>
+                      {sub.status}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {isLive && timelineHits.length === 0 && (
+            <p className="absolute text-xs text-gray-400 whitespace-nowrap" style={{ top: 20, left: '50%', transform: 'translateX(-50%)' }}>
+              No hits scheduled yet
+            </p>
+          )}
+
           <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-gray-400">
             <span>Campaign Launch</span>
             <span>Campaign Ends</span>
@@ -1412,14 +2144,28 @@ export default function CampaignOverviewTab({
       {/* Bottom panel — context-aware */}
       {isLive && campaignHitsData.length > 0 ? (
         <div className="grid gap-4 items-stretch" style={{ gridTemplateColumns: '1fr 1fr' }}>
-          <CampaignHitsPanel hits={campaignHitsData} isMultiBrand={isMultiBrand} />
-          <PerformanceChart campaignType={campaignType} isLive={isLive} onNavigateToCategory={onNavigateToCategory} />
+          <CampaignHitsPanel hits={campaignHitsData} isMultiBrand={isMultiBrand} onHitClick={handleHitClick} />
+          <PerformanceChart campaignType={campaignType} isLive={isLive} onNavigateToCategory={onNavigateToCategory} hasHits />
         </div>
       ) : isLive ? (
-        <PerformanceChart campaignType={campaignType} isLive={isLive} onNavigateToCategory={onNavigateToCategory} />
+        <div className="grid gap-4 items-stretch" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <AIRiskBrief onCreateHit={onCreateHit} />
+          <PerformanceChart campaignType={campaignType} isLive={isLive} onNavigateToCategory={onNavigateToCategory} hasHits={false} />
+        </div>
       ) : isPreLive && onNavigateToTab && checklistItems.length > 0 ? (
         <PreLaunchChecklist onNavigateToTab={onNavigateToTab} items={checklistItems} />
       ) : null}
+
+      {openHitId != null && (
+        <HitCampaignView
+          timelineHit={openTimelineHit}
+          campaignHit={openCampaignHit}
+          campaignName={campaignName}
+          timelineHits={timelineHits}
+          onClose={() => { setOpenHitId(null); setSelectedHitId(null) }}
+          onCreateSubHit={() => { setOpenHitId(null); setSelectedHitId(null); onCreateHit?.() }}
+        />
+      )}
     </div>
   )
 }
