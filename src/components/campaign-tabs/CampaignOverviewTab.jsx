@@ -24,8 +24,12 @@ import {
   Package,
   ArrowLeft,
   Pencil,
+  Trash2,
 } from 'lucide-react'
 import StatCard from '../StatCard'
+import CampaignProductsTab from './CampaignProductsTab'
+import CampaignScenarioTab from './CampaignScenarioTab'
+import CampaignSettingsTab from './CampaignSettingsTab'
 import {
   ComposedChart,
   Area,
@@ -1432,283 +1436,145 @@ function AIRiskBrief({ onCreateHit }) {
 // HitCampaignView
 // ---------------------------------------------------------------------------
 
-const HIT_PRODUCT_MOCK = [
-  { id: 1, name: 'Wool Blend Overcoat',  category: 'Coats & Jackets', was: '£220', now: '£176', sellThrough: 92 },
-  { id: 2, name: 'Quilted Parka',        category: 'Coats & Jackets', was: '£185', now: '£148', sellThrough: 74 },
-  { id: 3, name: 'Slim Fit Chinos',      category: 'Trousers',        was: '£95',  now: '£76',  sellThrough: 68 },
-  { id: 4, name: 'Merino Crew Neck',     category: 'Knitwear',        was: '£110', now: '£88',  sellThrough: 55 },
-  { id: 5, name: 'Technical Rain Jacket',category: 'Outerwear',       was: '£165', now: '£115', sellThrough: 41 },
-]
-
 function HitCampaignView({ timelineHit, campaignHit, campaignName, timelineHits = [], onClose, onCreateSubHit }) {
   const [activeTab, setActiveTab] = useState('Products & Categories')
 
   const name        = campaignHit?.name || timelineHit?.label || 'Hit'
-  const status      = campaignHit?.status || timelineHit?.status
+  const status      = campaignHit?.status || timelineHit?.status || 'Draft'
   const subHits     = timelineHit?.children || []
-  const isDraft     = status === 'Draft' || status === 'Planned'
   const isLive      = status === 'Live'
   const isCompleted = status === 'Completed'
 
-  const accentColor = isLive ? 'bg-orange-400' : isCompleted ? 'bg-green-500' : 'bg-gray-200'
-  const tabs = ['Products & Categories', 'Settings']
+  const accentColor = isLive ? 'bg-orange-400' : isCompleted ? 'bg-green-500' : 'bg-gray-300'
+  const hitAsCampaign = { name }
+  const tabs = ['Products & Categories', 'Scenario Planning', 'Settings']
 
   return (
     <div className="fixed inset-0 z-50 bg-white flex flex-col">
       {/* Status accent line */}
       <div className={`h-0.5 w-full shrink-0 ${accentColor}`} />
 
-      {/* Header */}
-      <div className="flex items-center gap-3 px-6 py-3.5 border-b border-gray-100 shrink-0">
+      {/* Back nav strip — subtle gray, always shows where you came from */}
+      <div className="flex items-center justify-between px-6 py-2.5 bg-gray-50 border-b border-gray-100 shrink-0">
         <button
           onClick={onClose}
-          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors shrink-0"
+          className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors group"
         >
-          <ArrowLeft size={15} />
+          <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
           <span>{campaignName || 'Campaign'}</span>
         </button>
-        <ChevronRight size={14} className="text-gray-300 shrink-0" />
-        <span className="text-sm font-semibold text-gray-900 flex-1 truncate">{name}</span>
-        <div className="flex items-center gap-2.5 shrink-0">
-          <HitStatusBadge status={status} />
-          {campaignHit?.discount && <span className="text-xs text-gray-400">{campaignHit.discount}</span>}
-          {campaignHit?.daysLeft && (
-            <span className="flex items-center gap-1 text-xs font-medium text-orange-500">
-              <Clock size={10} />{campaignHit.daysLeft}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2 ml-3 shrink-0">
+        <div className="flex items-center gap-2">
           <button
             onClick={onCreateSubHit}
             className="flex items-center gap-1.5 text-xs font-semibold text-[#2a44d4] border border-[#2a44d4]/30 rounded-lg px-3 py-1.5 hover:bg-[#2a44d4]/5 transition-colors"
           >
             <Plus size={12} /> Create sub-hit
           </button>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors">
-            <X size={16} />
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200/60 transition-colors">
+            <X size={15} />
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center px-6 border-b border-gray-100 shrink-0">
-        {tabs.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab
-                ? 'border-[#2a44d4] text-[#2a44d4]'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto bg-gray-50">
-        <div className="max-w-5xl mx-auto px-8 py-6 space-y-4">
-
-          {/* ── PRODUCTS & CATEGORIES ── */}
-          {activeTab === 'Products & Categories' && (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              {isDraft ? (
-                <div className="p-14 text-center">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Package size={20} className="text-gray-400" />
-                  </div>
-                  <p className="text-sm font-semibold text-gray-700 mb-1">No products assigned yet</p>
-                  <p className="text-xs text-gray-400 mb-5">Add products to this hit to start setting markdowns.</p>
-                  <button className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2a44d4] border border-[#2a44d4]/30 rounded-xl px-4 py-2.5 hover:bg-[#2a44d4]/5 transition-colors">
-                    <Plus size={13} /> Add products
-                  </button>
-                </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50/60">
-                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Product</th>
-                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Category</th>
-                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Was</th>
-                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Now</th>
-                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Sell-through</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {HIT_PRODUCT_MOCK.map((p, i) => (
-                      <tr key={p.id} className={`hover:bg-gray-50 transition-colors ${i < HIT_PRODUCT_MOCK.length - 1 ? 'border-b border-gray-50' : ''}`}>
-                        <td className="px-5 py-3.5 font-medium text-gray-900">{p.name}</td>
-                        <td className="px-5 py-3.5 text-gray-500">{p.category}</td>
-                        <td className="px-5 py-3.5 text-gray-400 line-through">{p.was}</td>
-                        <td className="px-5 py-3.5 font-semibold text-gray-900">{p.now}</td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                              <div className="h-full rounded-full bg-[#2a44d4]" style={{ width: `${p.sellThrough}%` }} />
-                            </div>
-                            <span className="text-xs font-medium text-gray-700">{p.sellThrough}%</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-
-          {/* ── SETTINGS ── */}
-          {activeTab === 'Settings' && (
-            <>
-              {isDraft && (
-                <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                  <AlertTriangle size={14} className="text-amber-500 shrink-0" />
-                  <p className="text-sm text-amber-700">This hit is in Draft. Settings can be edited before it goes live.</p>
-                </div>
-              )}
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <p className="text-sm font-semibold text-gray-900 mb-5">Hit Configuration</p>
-                <div className="grid grid-cols-2 gap-x-12 gap-y-5">
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1.5">Status</p>
-                    <HitStatusBadge status={status} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1.5">Discount</p>
-                    <p className="text-sm font-medium text-gray-900">{campaignHit?.discount || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1.5">Categories</p>
-                    <p className="text-sm font-medium text-gray-900">{campaignHit?.categories || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1.5">Start date</p>
-                    <p className="text-sm font-medium text-gray-900">{timelineHit?.date || '—'}</p>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// HitDetailDrawer (legacy — replaced by HitCampaignView)
-// ---------------------------------------------------------------------------
-
-function HitDetailDrawer({ timelineHit, campaignHit, onClose, onCreateSubHit }) {
-  const name    = campaignHit?.name || timelineHit?.label || 'Hit'
-  const status  = campaignHit?.status || timelineHit?.status
-  const subHits = timelineHit?.children || []
-
-  return (
-    <>
-      <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div
-        className="fixed right-0 top-0 h-screen w-80 bg-white border-l border-gray-200 shadow-2xl z-50 flex flex-col"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-start gap-3 px-4 py-4 border-b border-gray-100">
+      {/* Hit identity header */}
+      <div className="px-6 py-4 border-b border-gray-100 shrink-0">
+        <div className="flex items-start justify-between gap-6">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 leading-snug">{name}</p>
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <HitStatusBadge status={status} />
-              {campaignHit?.discount   && <span className="text-xs text-gray-400">{campaignHit.discount}</span>}
-              {campaignHit?.categories && <span className="text-xs text-gray-400">{campaignHit.categories}</span>}
+            <div className="flex items-center gap-2 mb-2">
+              {/* HIT badge — makes entity type explicit */}
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#2a44d4] bg-indigo-50 border border-[#2a44d4]/20 px-1.5 py-0.5 rounded shrink-0">
+                <Zap size={8} fill="currentColor" /> Hit
+              </span>
+              <h2 className="text-base font-semibold text-gray-900 truncate">{name}</h2>
             </div>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors shrink-0 mt-0.5">
-            <X size={14} />
-          </button>
-        </div>
-
-        {(campaignHit?.alert || campaignHit?.missedTarget) && (
-          <div className="px-4 py-3 space-y-1.5 border-b border-gray-100">
-            {[campaignHit.alert, campaignHit.missedTarget].filter(Boolean).map((msg, i) => (
-              <div key={i} className="flex items-start gap-1.5 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5">
-                <AlertTriangle size={10} className="text-amber-500 shrink-0 mt-0.5" />
-                <span className="text-xs text-amber-700 leading-snug">{msg}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <HitStatusBadge status={status} />
+              {campaignHit?.discount && (
+                <><span className="text-gray-300">·</span><span className="text-xs text-gray-500">{campaignHit.discount}</span></>
+              )}
+              {campaignHit?.categories && (
+                <><span className="text-gray-300">·</span><span className="text-xs text-gray-500">{campaignHit.categories}</span></>
+              )}
+              {timelineHit?.date && (
+                <><span className="text-gray-300">·</span>
+                <span className="flex items-center gap-1 text-xs text-gray-500"><CalendarDays size={10} /> {timelineHit.date}</span></>
+              )}
+              {campaignHit?.daysLeft && (
+                <><span className="text-gray-300">·</span>
+                <span className="flex items-center gap-1 text-xs font-medium text-orange-500"><Clock size={10} /> {campaignHit.daysLeft}</span></>
+              )}
+            </div>
+            {(campaignHit?.alert || campaignHit?.missedTarget) && (
+              <div className="flex items-center gap-1.5 mt-2">
+                <AlertTriangle size={11} className="text-amber-500 shrink-0" />
+                <span className="text-xs text-amber-700">{campaignHit.alert || campaignHit.missedTarget}</span>
               </div>
-            ))}
+            )}
           </div>
-        )}
 
-        {campaignHit && (campaignHit.sellThrough || campaignHit.revenue || campaignHit.units) && (
-          <div className="px-4 py-4 border-b border-gray-100">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Performance</p>
-            <div className="space-y-3">
+          {/* Quick performance stats for live/completed — visible at a glance without opening Overview */}
+          {(isLive || isCompleted) && campaignHit && (campaignHit.sellThrough || campaignHit.revenue) && (
+            <div className="flex items-center gap-5 shrink-0">
               {campaignHit.sellThrough && (
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs text-gray-500">Sell-through</span>
-                    <span className="text-xs font-bold text-gray-900">{campaignHit.sellThrough}</span>
-                  </div>
-                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#2a44d4] rounded-full" style={{ width: campaignHit.sellThrough }} />
-                  </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-400 mb-0.5">Sell-through</p>
+                  <p className="text-sm font-bold text-gray-900">{campaignHit.sellThrough}</p>
                 </div>
               )}
               {campaignHit.revenue && (
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Revenue</span>
-                  <span className="text-xs font-bold text-gray-900">{campaignHit.revenue}</span>
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-400 mb-0.5">Revenue</p>
+                  <p className="text-sm font-bold text-gray-900">{campaignHit.revenue}</p>
                 </div>
               )}
               {campaignHit.units && (
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Units sold</span>
-                  <span className="text-xs font-semibold text-gray-700">{campaignHit.units}</span>
-                </div>
-              )}
-              {campaignHit.daysLeft && (
-                <div className="flex items-center gap-1">
-                  <Clock size={10} className="text-orange-500" />
-                  <span className="text-xs font-medium text-orange-500">{campaignHit.daysLeft}</span>
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-400 mb-0.5">Units</p>
+                  <p className="text-xs font-semibold text-gray-700">{campaignHit.units}</p>
                 </div>
               )}
             </div>
-          </div>
-        )}
-
-        <div className="px-4 py-4 flex-1 overflow-y-auto">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            Sub-hits {subHits.length > 0 ? `(${subHits.length})` : ''}
-          </p>
-          {subHits.length > 0 ? (
-            <div className="space-y-2">
-              {subHits.map(sub => (
-                <div key={sub.id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors cursor-pointer">
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${
-                    sub.status === 'Completed' ? 'bg-[#2a44d4]' :
-                    sub.status === 'Live'      ? 'bg-orange-400' : 'bg-gray-300'
-                  }`} />
-                  <span className="text-xs font-medium text-gray-700 flex-1">{sub.label}</span>
-                  <HitStatusBadge status={sub.status} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-gray-400">No sub-hits created yet.</p>
           )}
         </div>
+      </div>
 
-        <div className="px-4 py-4 border-t border-gray-100">
-          <button
-            onClick={onCreateSubHit}
-            className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-[#2a44d4] border border-[#2a44d4]/30 rounded-xl py-2.5 hover:bg-[#2a44d4]/5 transition-colors"
-          >
-            <Plus size={12} /> Create sub-hit
-          </button>
+      {/* Tab bar — same style as CampaignDetail */}
+      <div className="px-6 border-b border-gray-200 shrink-0">
+        <div className="flex gap-7">
+          {tabs.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`pb-3 pt-3 text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === tab
+                  ? 'text-[#2a44d4] border-b-2 border-[#2a44d4]'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
       </div>
-    </>
+
+      {/* Tab content — same padding/bg as CampaignDetail, real components */}
+      <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
+        {activeTab === 'Products & Categories' && (
+          <CampaignProductsTab
+            status={status}
+            isRL={false}
+            isMultiBrand={false}
+            existingHitsCount={subHits.length}
+          />
+        )}
+        {activeTab === 'Scenario Planning' && (
+          <CampaignScenarioTab onScenarioSaved={() => {}} />
+        )}
+        {activeTab === 'Settings' && (
+          <CampaignSettingsTab campaign={hitAsCampaign} status={status} />
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -1716,7 +1582,7 @@ function HitDetailDrawer({ timelineHit, campaignHit, onClose, onCreateSubHit }) 
 // CampaignHitsPanel
 // ---------------------------------------------------------------------------
 
-function CampaignHitsPanel({ hits = [], isMultiBrand = false, onHitClick }) {
+function CampaignHitsPanel({ hits = [], isMultiBrand = false, onHitClick, onDeleteHit }) {
   const [sort, setSort] = useState('Most recent')
 
   const liveHits      = hits.filter(h => h.status === 'Live')
@@ -1767,7 +1633,18 @@ function CampaignHitsPanel({ hits = [], isMultiBrand = false, onHitClick }) {
               {hit.missedTarget && <span className="text-xs text-amber-600">⚠ {hit.missedTarget}</span>}
             </div>
           </div>
-          <ChevronRight size={15} className="text-gray-400 shrink-0 mt-0.5" />
+          <div className="flex items-center gap-1 shrink-0 ml-1">
+            {isDraft && (
+              <button
+                onClick={e => { e.stopPropagation(); onDeleteHit?.(hit.id) }}
+                className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                title="Delete hit"
+              >
+                <Trash2 size={13} />
+              </button>
+            )}
+            <ChevronRight size={15} className="text-gray-400 mt-0.5" />
+          </div>
         </div>
 
         {!isDraft && (isMultiBrand ? (
@@ -1853,6 +1730,24 @@ function CampaignHitsPanel({ hits = [], isMultiBrand = false, onHitClick }) {
 // Main export
 // ---------------------------------------------------------------------------
 
+function groupByProximity(hits, threshold = 5) {
+  if (!hits.length) return []
+  const sorted = [...hits].sort((a, b) => a.pct - b.pct)
+  const groups = []
+  let i = 0
+  while (i < sorted.length) {
+    const group = [sorted[i]]
+    let j = i + 1
+    while (j < sorted.length && sorted[j].pct - sorted[i].pct <= threshold) {
+      group.push(sorted[j])
+      j++
+    }
+    groups.push(group)
+    i = j
+  }
+  return groups
+}
+
 export default function CampaignOverviewTab({
   status,
   campaignName,
@@ -1860,6 +1755,7 @@ export default function CampaignOverviewTab({
   onNavigateToTab,
   onNavigateToCategory,
   onCreateHit,
+  onDeleteHit,
   campaignType,
   timelineHits = [],
   campaignHitsData = [],
@@ -1872,7 +1768,8 @@ export default function CampaignOverviewTab({
   const checklistItems  = getChecklistItems(status, campaignType)
   const [selectedHitId, setSelectedHitId] = useState(null)
   const [openHitId,     setOpenHitId]     = useState(null)
-  const [hoveredHitId,  setHoveredHitId]  = useState(null)
+  const [previewGroup,  setPreviewGroup]  = useState(null)
+  const previewCardRef = useRef(null)
 
   const allKpis = isMultiBrand ? ALL_END_KPIS : (campaignType === 'Promo' ? ALL_PROMO_KPIS : ALL_MARKDOWN_KPIS)
   const [visibleKpiKeys, setVisibleKpiKeys] = useState(() => new Set(allKpis.slice(0, 4).map(k => k.key)))
@@ -1882,6 +1779,7 @@ export default function CampaignOverviewTab({
   useEffect(() => {
     function handler(e) {
       if (kpiPanelRef.current && !kpiPanelRef.current.contains(e.target)) setShowKpiPanel(false)
+      if (previewCardRef.current && !previewCardRef.current.contains(e.target)) setPreviewGroup(null)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -1901,16 +1799,20 @@ export default function CampaignOverviewTab({
   const openTimelineHit = openHitId != null ? timelineHits.find(h => h.id === openHitId) : null
   const openCampaignHit = openHitId != null ? campaignHitsData.find(h => h.id === openHitId) : null
 
+  const hitGroups = groupByProximity(timelineHits)
+
   function handleHitClick(hit) {
-    const hitId  = hit.id
-    const isOpen = openHitId === hitId
-    if (isOpen) {
-      setOpenHitId(null); setSelectedHitId(null)
-    } else {
-      setOpenHitId(hitId)
-      const tHit = timelineHits.find(h => h.id === hitId) || hit
-      if (tHit.children?.length > 0) setSelectedHitId(hitId)
-    }
+    setOpenHitId(hit.id)
+    const tHit = timelineHits.find(h => h.id === hit.id) || hit
+    if (tHit.children?.length > 0) setSelectedHitId(hit.id)
+    setPreviewGroup(null)
+  }
+
+  function handleGroupDotClick(group) {
+    setPreviewGroup(prev => {
+      if (prev && prev.length === group.length && prev.every((h, i) => h.id === group[i].id)) return null
+      return group
+    })
   }
 
   return (
@@ -2023,7 +1925,7 @@ export default function CampaignOverviewTab({
         </div>
 
         {/* Timeline */}
-        <div className="relative" style={{ paddingBottom: expandedSubHits.length > 0 ? 104 : isLive && timelineHits.length === 0 ? 32 : 56 }}>
+        <div className="relative overflow-visible" style={{ paddingBottom: expandedSubHits.length > 0 ? 104 : isLive && timelineHits.length === 0 ? 32 : 56 }}>
           {/* Week date labels */}
           <div className="flex justify-between text-xs text-gray-400 mb-3">
             {['W1 | 12/02/24', 'W2 | 19/02/24', 'W3 | 28/02/24', 'W4 | 04/03/24'].map(w => (
@@ -2035,63 +1937,180 @@ export default function CampaignOverviewTab({
           <div className="relative h-2 bg-gray-100 rounded-full">
             <div className="absolute left-0 top-0 h-full bg-[#2a44d4] rounded-full transition-all" style={{ width: '50%' }} />
 
-            {timelineHits.map(hit => {
-              const hasChildren = hit.children?.length > 0
-              const isActive    = openHitId === hit.id
-              const isHovered   = hoveredHitId === hit.id
+            {/* Hit group dots — one dot per proximity group */}
+            {hitGroups.map((group, gi) => {
+              const isCluster  = group.length > 1
+              const pct        = group[0].pct
+              const isPreview  = previewGroup !== null && previewGroup.length === group.length && previewGroup.every((h, i) => h.id === group[i].id)
+              const hasLive    = group.some(h => h.status === 'Live')
+              const hasCompleted = group.some(h => h.status === 'Completed')
+              const repHit     = group[0]
+              const hasChildren = !isCluster && repHit.children?.length > 0
+              const dotColor   = hasLive      ? 'bg-orange-400 border-orange-400' :
+                                 hasCompleted ? 'bg-[#2a44d4] border-[#2a44d4]' :
+                                                'bg-white border-gray-300'
               return (
-                <button
-                  key={hit.id}
-                  onClick={() => handleHitClick(hit)}
-                  onMouseEnter={() => setHoveredHitId(hit.id)}
-                  onMouseLeave={() => setHoveredHitId(null)}
-                  className="absolute top-1/2 focus:outline-none cursor-pointer"
-                  style={{ left: `${hit.pct}%`, transform: 'translateX(-50%) translateY(-50%)' }}
-                >
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-150
-                    ${isActive  ? 'scale-110 ring-2 ring-[#2a44d4]/30 ring-offset-1' :
-                      isHovered ? 'scale-110 ring-2 ring-gray-300 ring-offset-1' : 'scale-100'}
-                    ${hit.status === 'Completed' ? 'bg-[#2a44d4] border-[#2a44d4]' :
-                      hit.status === 'Live'      ? 'bg-orange-400 border-orange-400' :
-                                                   'bg-white border-gray-300'}`}
+                <div key={gi} className="absolute top-1/2" style={{ left: `${pct}%`, transform: 'translateX(-50%) translateY(-50%)' }}>
+                  <button
+                    onClick={() => handleGroupDotClick(group)}
+                    className="relative focus:outline-none cursor-pointer block"
                   >
-                    {hit.status === 'Completed' && <CheckCircle2 size={8} className="text-white" />}
-                  </div>
-                  {hasChildren && (
-                    <span className="absolute -top-1.5 -right-2 w-3.5 h-3.5 bg-[#2a44d4] text-white rounded-full text-[7px] font-bold flex items-center justify-center leading-none pointer-events-none">
-                      {hit.children.length}
-                    </span>
-                  )}
-                </button>
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-150
+                      ${isPreview ? 'scale-110 ring-2 ring-[#2a44d4]/30 ring-offset-1' : 'hover:scale-110'}
+                      ${dotColor}`}
+                    >
+                      {hasCompleted && !hasLive && !isCluster && <CheckCircle2 size={8} className="text-white" />}
+                    </div>
+                    {/* Cluster count badge — only shown when multiple hits share a date */}
+                    {isCluster && (
+                      <span className="absolute -top-2 -right-2 min-w-[15px] h-[15px] bg-white border border-gray-300 text-gray-600 rounded-full text-[8px] font-semibold flex items-center justify-center leading-none pointer-events-none px-0.5 shadow-sm">
+                        {group.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
               )
             })}
+
+            {/* Hit preview card — click-state popover below the dot */}
+            {previewGroup && (
+              <div
+                ref={previewCardRef}
+                className="absolute z-40"
+                style={{ left: `${previewGroup[0].pct}%`, transform: 'translateX(-50%)', top: 'calc(100% + 14px)' }}
+              >
+                {/* Arrow pointing up */}
+                <div className="absolute left-1/2 -top-[5px] -translate-x-1/2 w-2.5 h-2.5 bg-white border-t border-l border-gray-200 rotate-45 z-10" />
+                <div className="bg-white rounded-xl border border-gray-200 shadow-xl overflow-hidden" style={{ minWidth: 220, maxWidth: 290 }}>
+                  {previewGroup.length === 1 ? (() => {
+                    const hit = previewGroup[0]
+                    const isDraft = hit.status === 'Draft' || hit.status === 'Planned'
+                    const isLiveHit = hit.status === 'Live'
+                    return (
+                      <div>
+                        <div className="px-4 pt-4 pb-3">
+                          <div className="flex items-center justify-between gap-3 mb-1">
+                            <span className="text-sm font-semibold text-gray-900 truncate">{hit.label}</span>
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${
+                              isDraft    ? 'bg-gray-100 text-gray-500' :
+                              isLiveHit  ? 'bg-orange-50 text-orange-600' :
+                                           'bg-green-50 text-green-600'}`}>
+                              {hit.status}
+                            </span>
+                          </div>
+                          {hit.date && <p className="text-xs text-gray-400">{hit.date}</p>}
+                          {isLiveHit && (
+                            <div className="flex items-center gap-3 mt-2.5">
+                              <span className="text-xs text-gray-500">65% sell-through</span>
+                              <span className="text-xs text-gray-300">·</span>
+                              <span className="text-xs text-gray-500">€1.2M rev</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="border-t border-gray-100 px-3 py-2.5 flex items-center justify-between gap-2">
+                          <button
+                            onClick={() => handleHitClick(hit)}
+                            className="flex items-center gap-1 text-xs font-medium text-[#2a44d4] hover:text-[#1e35b0] transition-colors"
+                          >
+                            View hit <ChevronRight size={11} />
+                          </button>
+                          {isDraft && (
+                            <button
+                              onClick={e => { e.stopPropagation(); onDeleteHit?.(hit.id); setPreviewGroup(null) }}
+                              className="flex items-center gap-1 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={11} /> Delete
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })() : (
+                    <div>
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-xs font-semibold text-gray-700">{previewGroup.length} hits · {previewGroup[0].date}</p>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {previewGroup.map(hit => {
+                          const isDraft = hit.status === 'Draft' || hit.status === 'Planned'
+                          return (
+                            <div key={hit.id} className="flex items-center justify-between gap-2 px-4 py-2.5">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className={`w-2 h-2 rounded-full shrink-0 ${isDraft ? 'bg-gray-300' : hit.status === 'Live' ? 'bg-orange-400' : 'bg-[#2a44d4]'}`} />
+                                <span className="text-xs font-medium text-gray-800 truncate">{hit.label}</span>
+                                <span className="text-[10px] text-gray-400 shrink-0">{hit.status}</span>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  onClick={() => handleHitClick(hit)}
+                                  className="text-[10px] font-medium text-[#2a44d4] hover:text-[#1e35b0] px-1.5 py-1 rounded transition-colors whitespace-nowrap"
+                                >
+                                  View
+                                </button>
+                                {isDraft && (
+                                  <button
+                                    onClick={e => { e.stopPropagation(); onDeleteHit?.(hit.id); setPreviewGroup(prev => { const next = prev?.filter(h => h.id !== hit.id) || []; return next.length > 0 ? next : null }) }}
+                                    className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                  >
+                                    <Trash2 size={10} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Hit labels — draft/planned labels appear only on hover */}
-          {timelineHits.map(hit => {
-            const isDraft     = hit.status === 'Draft' || hit.status === 'Planned'
-            const hasChildren = hit.children?.length > 0
-            const isActive    = openHitId === hit.id
-            const isHovered   = hoveredHitId === hit.id
-            const showLabel   = !isDraft || isHovered || isActive
+          {/* Labels below track — draft-only clusters */}
+          {hitGroups.map((group, gi) => {
+            const nonDrafts = group.filter(h => h.status !== 'Draft' && h.status !== 'Planned')
+            const allDraft  = nonDrafts.length === 0
+            if (!allDraft || group.length < 2) return null
+            const pct = group[0].pct
             return (
               <div
-                key={hit.id}
-                onClick={() => handleHitClick(hit)}
-                className={`absolute text-center cursor-pointer transition-opacity duration-150 ${showLabel ? 'opacity-100' : 'opacity-0'}`}
-                style={{ left: `${hit.pct}%`, transform: 'translateX(-50%)', top: 46 }}
+                key={`draft-label-${gi}`}
+                onClick={() => handleGroupDotClick(group)}
+                className="absolute text-center cursor-pointer"
+                style={{ left: `${pct}%`, transform: 'translateX(-50%)', top: 46 }}
               >
-                <p className={`text-xs font-semibold whitespace-nowrap flex items-center gap-0.5 ${isActive ? 'text-[#2a44d4]' : isDraft ? 'text-gray-400' : 'text-gray-700'}`}>
-                  {hit.label}
+                <p className="text-xs font-medium text-gray-400 whitespace-nowrap">
+                  Drafts ({group.length})
+                </p>
+              </div>
+            )
+          })}
+
+          {/* Labels below track — non-draft hits only, one per group */}
+          {hitGroups.map((group, gi) => {
+            const nonDrafts = group.filter(h => h.status !== 'Draft' && h.status !== 'Planned')
+            if (nonDrafts.length === 0) return null
+            const rep = nonDrafts[0]
+            const pct = group[0].pct
+            const hasChildren = rep.children?.length > 0
+            return (
+              <div
+                key={gi}
+                onClick={() => handleGroupDotClick(group)}
+                className="absolute text-center cursor-pointer"
+                style={{ left: `${pct}%`, transform: 'translateX(-50%)', top: 46 }}
+              >
+                <p className={`text-xs font-semibold whitespace-nowrap flex items-center gap-0.5 ${openHitId === rep.id ? 'text-[#2a44d4]' : 'text-gray-700'}`}>
+                  {rep.label}
                   {hasChildren && (
-                    <ChevronDown size={10} className={`transition-transform ${selectedHitId === hit.id ? 'rotate-180 text-[#2a44d4]' : 'text-gray-400'}`} />
+                    <ChevronDown size={10} className={`transition-transform ${selectedHitId === rep.id ? 'rotate-180 text-[#2a44d4]' : 'text-gray-400'}`} />
                   )}
                 </p>
                 <div className={`text-xs flex items-center justify-center gap-0.5 whitespace-nowrap
-                  ${hit.status === 'Completed' ? 'text-green-600' :
-                    hit.status === 'Live'      ? 'text-orange-500' : 'text-gray-400'}`}>
-                  {hit.status === 'Completed' && <CheckCircle2 size={9} />}
-                  {hit.status}
+                  ${rep.status === 'Completed' ? 'text-green-600' : 'text-orange-500'}`}>
+                  {rep.status === 'Completed' && <CheckCircle2 size={9} />}
+                  {rep.status}
                 </div>
               </div>
             )
@@ -2144,7 +2163,7 @@ export default function CampaignOverviewTab({
       {/* Bottom panel — context-aware */}
       {isLive && campaignHitsData.length > 0 ? (
         <div className="grid gap-4 items-stretch" style={{ gridTemplateColumns: '1fr 1fr' }}>
-          <CampaignHitsPanel hits={campaignHitsData} isMultiBrand={isMultiBrand} onHitClick={handleHitClick} />
+          <CampaignHitsPanel hits={campaignHitsData} isMultiBrand={isMultiBrand} onHitClick={handleHitClick} onDeleteHit={onDeleteHit} />
           <PerformanceChart campaignType={campaignType} isLive={isLive} onNavigateToCategory={onNavigateToCategory} hasHits />
         </div>
       ) : isLive ? (

@@ -52,8 +52,8 @@ const MULTI_HIT_TIMELINE_HITS = [
     ]
   },
   { id: 3, label: 'Hit 3', pct: 64, status: 'Draft', date: '28/02' },
-  { id: 4, label: 'Hit 4', pct: 77, status: 'Draft', date: '07/03' },
-  { id: 5, label: 'Hit 5', pct: 88, status: 'Draft', date: '14/03' },
+  { id: 4, label: 'Hit 4', pct: 64, status: 'Draft', date: '28/02' },
+  { id: 5, label: 'Hit 5', pct: 82, status: 'Draft', date: '08/03' },
 ]
 
 const MULTI_HIT_CAMPAIGN_HITS = [
@@ -279,6 +279,11 @@ export default function CampaignDetail({ campaign, onBack }) {
     }, ...prev])
   }
 
+  function handleDeleteHit(hitId) {
+    setTimelineHits(prev => prev.filter(h => h.id !== hitId))
+    setCampaignHitsData(prev => prev.filter(h => h.id !== hitId))
+  }
+
   useEffect(() => {
     if (!showMenu) return
     function handler(e) { if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false) }
@@ -462,6 +467,7 @@ export default function CampaignDetail({ campaign, onBack }) {
           onNavigateToTab={tab => setActiveTab(tab)}
           onNavigateToCategory={navigateToCategory}
           onCreateHit={() => setShowCreateHitModal(true)}
+          onDeleteHit={handleDeleteHit}
           timelineHits={timelineHits}
           campaignHitsData={campaignHitsData}
           isMultiBrand={campaign.isMultiBrand}

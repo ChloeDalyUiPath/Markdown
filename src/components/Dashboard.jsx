@@ -94,7 +94,7 @@ export default function Dashboard() {
             <Tag className="w-5 h-5 text-green-700" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Markdown</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Pricing AI</h1>
             <p className="text-sm text-gray-400 mt-0.5">
               Create effective pricing campaigns to help you maximize profit and reduce manual
               decision making
